@@ -11,8 +11,12 @@ import {
   SafeAreaView,
   Platform,
   Alert,
+  Image,
+  FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ExpoVectorIcons from '@expo/vector-icons';
 import { generateAppCode } from './services/anthropicService';
 import PreviewScreen from './components/PreviewScreen';
 import LoadingScreen from './components/LoadingScreen';
@@ -64,10 +68,33 @@ export default function App() {
       // Dynamically create the component from the generated code
       // This uses eval to execute the generated code and create a component
       // In production, you'd want more security measures
-      const componentFunction = new Function('React', 'useState', 'useEffect', 'View', 'Text', 'ScrollView', 'TouchableOpacity', 'TextInput', 'StyleSheet', 'Image', 'FlatList', 'Dimensions', `
+      const componentFunction = new Function(
+        'React',
+        'useState',
+        'useEffect',
+        'View',
+        'Text',
+        'ScrollView',
+        'TouchableOpacity',
+        'TextInput',
+        'StyleSheet',
+        'Image',
+        'FlatList',
+        'Dimensions',
+        'ActivityIndicator',
+        'LinearGradient',
+        'Ionicons',
+        'MaterialIcons',
+        'FontAwesome',
+        'AntDesign',
+        'Entypo',
+        'Feather',
+        'MaterialCommunityIcons',
+        `
         ${code}
         return GeneratedApp;
-      `);
+      `
+      );
 
       const Component = componentFunction(
         React,
@@ -79,9 +106,18 @@ export default function App() {
         TouchableOpacity,
         TextInput,
         StyleSheet,
-        null, // Image placeholder
-        null, // FlatList placeholder
-        Dimensions
+        Image,
+        FlatList,
+        Dimensions,
+        ActivityIndicator,
+        LinearGradient,
+        ExpoVectorIcons.Ionicons,
+        ExpoVectorIcons.MaterialIcons,
+        ExpoVectorIcons.FontAwesome,
+        ExpoVectorIcons.AntDesign,
+        ExpoVectorIcons.Entypo,
+        ExpoVectorIcons.Feather,
+        ExpoVectorIcons.MaterialCommunityIcons
       );
 
       setGeneratedComponent(() => Component);

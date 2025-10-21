@@ -12,25 +12,59 @@ const anthropic = new Anthropic({
  */
 export async function generateAppCode(appIdea) {
   try {
-    const prompt = `You are an expert React Native developer. Generate a complete, functional React Native component based on this app idea:
+    const prompt = `You are an expert React Native developer using Expo. Generate a complete, production-ready React Native app based on this idea: "${appIdea}"
 
-"${appIdea}"
+CRITICAL REQUIREMENTS:
 
-Requirements:
-1. Return ONLY the component code, no explanations
-2. Use React Native core components (View, Text, ScrollView, TouchableOpacity, TextInput, etc.)
-3. Include proper imports from 'react' and 'react-native'
-4. Use StyleSheet for styling
-5. Make it beautiful with modern UI/UX
-6. Include functional features (buttons should work, forms should handle input, etc.)
-7. Use hooks (useState, useEffect) for state management
-8. Component name should be 'GeneratedApp'
-9. Export as default: export default function GeneratedApp()
-10. Include sample data if needed (no API calls)
-11. Make it interactive and fully functional
-12. Use a nice color scheme
+1. Output ONLY valid React Native code with Expo - no explanations, no markdown, no backticks
 
-Generate the complete component code now:`;
+2. Start with: import React from 'react';
+
+3. Use ONLY these imports:
+   - react
+   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, etc.)
+   - @expo/vector-icons (for icons)
+   - expo-linear-gradient (for gradients)
+   - NO OTHER LIBRARIES
+
+4. Create a complete, working app with:
+   - Proper state management using useState and useEffect
+   - Have 20,000 UI and UX designers each with 20 years of experience implement a clean and modern UI with good spacing and colors
+   - Interactive elements that actually work
+   - Sample data where needed (at least 5-10 items)
+   - Smooth user experience
+
+5. Use StyleSheet.create() for ALL styling
+
+6. Include proper error handling
+
+7. Make it visually appealing with:
+   - Modern color palette
+   - Good typography (use different font sizes and weights)
+   - Proper spacing and padding
+   - Box shadows where appropriate
+   - Smooth animations for interactions
+
+8. The app should be immediately runnable in Expo Go
+
+9. Use functional components with hooks only
+
+10. Add comments for complex logic
+
+STRUCTURE:
+- Put ALL code in a single component named 'GeneratedApp'
+- Export default at the end: export default function GeneratedApp()
+- Include realistic sample data
+- Make all interactive elements functional
+
+DO NOT:
+- Include any explanations before or after the code
+- Use markdown code blocks or backticks
+- Import libraries that aren't listed above
+- Leave placeholder comments like "// Add more features here"
+- Create incomplete or non-functional features
+
+The user should be able to copy this code directly into Expo Snack and have it work perfectly.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
