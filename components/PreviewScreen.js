@@ -20,7 +20,7 @@ const { width, height } = Dimensions.get('window');
  * @param {React.Component} props.GeneratedComponent - The dynamically generated component
  * @param {Function} props.onBack - Callback to return to the main screen
  * @param {Function} props.onExport - Callback to export the generated app
- * @param {Function} props.onModify - Callback to modify the app with follow-up request
+ * @param {Function} props.onReturnToConversation - Callback to return to conversation for modifications
  * @param {boolean} props.isDarkMode - Current theme mode
  * @param {Object} props.usageStats - Token usage and cost statistics
  */
@@ -28,12 +28,10 @@ export default function PreviewScreen({
   GeneratedComponent,
   onBack,
   onExport,
-  onModify,
+  onReturnToConversation,
   isDarkMode,
   usageStats,
 }) {
-  const [modificationText, setModificationText] = React.useState('');
-  const [showModifyInput, setShowModifyInput] = React.useState(false);
   const colors = {
     background: isDarkMode
       ? ['#020617', '#0f172a', '#020617']
@@ -66,68 +64,17 @@ export default function PreviewScreen({
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           Preview
         </Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            onPress={() => setShowModifyInput(!showModifyInput)} 
-            style={[styles.modifyButton, { marginRight: 8 }]}
+        <TouchableOpacity onPress={onExport} style={styles.exportButton}>
+          <LinearGradient
+            colors={['#2563eb', '#06b6d4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.exportGradient}
           >
-            <LinearGradient
-              colors={['#f59e0b', '#f97316']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.exportGradient}
-            >
-              <Text style={styles.exportText}>Modify</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onExport} style={styles.exportButton}>
-            <LinearGradient
-              colors={['#2563eb', '#06b6d4']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.exportGradient}
-            >
-              <Text style={styles.exportText}>Export</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.exportText}>Export</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
-
-      {/* Modification Input */}
-      {showModifyInput && (
-        <View style={[styles.modifyContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.modifyLabel, { color: colors.text }]}>
-            💬 Modify your app:
-          </Text>
-          <TextInput
-            value={modificationText}
-            onChangeText={setModificationText}
-            placeholder="E.g., 'Make the buttons blue' or 'Add a dark mode toggle'"
-            placeholderTextColor={colors.textMuted}
-            multiline
-            style={[styles.modifyInput, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
-          />
-          <TouchableOpacity
-            onPress={() => {
-              if (modificationText.trim()) {
-                onModify(modificationText);
-                setModificationText('');
-                setShowModifyInput(false);
-              }
-            }}
-            disabled={!modificationText.trim()}
-          >
-            <LinearGradient
-              colors={['#f59e0b', '#f97316']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.modifySubmitButton, !modificationText.trim() && { opacity: 0.5 }]}
-            >
-              <Text style={styles.modifySubmitText}>⚡ Regenerate with Changes</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      )}
 
         {/* Phone Frame */}
         <View style={styles.previewContainer}>
@@ -270,6 +217,22 @@ export default function PreviewScreen({
           </View>
         )}
       </LinearGradient>
+
+      {/* Floating AssistiveTouch-style button */}
+      <TouchableOpacity 
+        onPress={onReturnToConversation}
+        style={styles.floatingButton}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={['#667eea', '#764ba2']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.floatingButtonGradient}
+        >
+          <Text style={styles.floatingButtonIcon}>💬</Text>
+        </LinearGradient>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -427,46 +390,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
-  modifyContainer: {
-    marginHorizontal: 16,
-    marginVertical: 12,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 8,
+    zIndex: 1000,
   },
-  modifyLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  modifyInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 14,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: 12,
-  },
-  modifySubmitButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+  floatingButtonGradient: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  modifySubmitText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  floatingButtonIcon: {
+    fontSize: 28,
   },
 });
 

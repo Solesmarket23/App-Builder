@@ -48,6 +48,14 @@ export default function App() {
   ];
 
   /**
+   * Returns to conversation mode from preview
+   */
+  const handleReturnToConversation = () => {
+    setShowPreview(false);
+    setIdea(''); // Clear input for new modification
+  };
+
+  /**
    * Handles the generation of the app based on user input
    */
   const generateApp = async (modificationRequest = null) => {
@@ -212,7 +220,7 @@ export default function App() {
         GeneratedComponent={GeneratedComponent}
         onBack={handleBack}
         onExport={handleExport}
-        onModify={(modificationRequest) => generateApp(modificationRequest)}
+        onReturnToConversation={handleReturnToConversation}
         isDarkMode={isDarkMode}
         usageStats={usageStats}
       />
@@ -274,6 +282,37 @@ export default function App() {
             </Text>
           </View>
 
+          {/* Conversation History */}
+          {conversationHistory.length > 0 && (
+            <View style={[styles.conversationContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={styles.conversationHeader}>
+                <Text style={[styles.conversationTitle, { color: colors.text }]}>
+                  💬 Conversation History
+                </Text>
+                <Text style={[styles.conversationCount, { color: colors.textMuted }]}>
+                  {Math.floor(conversationHistory.length / 2) + 1} {Math.floor(conversationHistory.length / 2) + 1 === 1 ? 'iteration' : 'iterations'}
+                </Text>
+              </View>
+              <ScrollView style={styles.conversationScroll} showsVerticalScrollIndicator={false}>
+                {conversationHistory.map((msg, index) => (
+                  msg.role === 'user' && (
+                    <View key={index} style={styles.conversationMessage}>
+                      <View style={styles.messageHeader}>
+                        <Text style={styles.messageRole}>👤 You</Text>
+                        <Text style={[styles.messageIndex, { color: colors.textMuted }]}>
+                          #{Math.floor(index / 2) + 1}
+                        </Text>
+                      </View>
+                      <Text style={[styles.messageText, { color: colors.text }]} numberOfLines={2}>
+                        {msg.content.substring(0, 100)}{msg.content.length > 100 ? '...' : ''}
+                      </Text>
+                    </View>
+                  )
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Main Card */}
           <View
             style={[
@@ -293,7 +332,7 @@ export default function App() {
                 <Text style={styles.cardIconText}>✨</Text>
               </LinearGradient>
               <Text style={[styles.cardTitle, { color: colors.text }]}>
-                Your Vision
+                {conversationHistory.length > 0 ? 'Modify Your App' : 'Your Vision'}
               </Text>
             </View>
 
@@ -302,7 +341,7 @@ export default function App() {
               <TextInput
                 value={idea}
                 onChangeText={setIdea}
-                placeholder="Describe your dream app..."
+                placeholder={conversationHistory.length > 0 ? "What would you like to change?" : "Describe your dream app..."}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 textAlignVertical="top"
@@ -368,7 +407,10 @@ export default function App() {
               >
                 <Text style={styles.generateButtonText}>⚡</Text>
                 <Text style={styles.generateButtonText}>
-                  {isGenerating ? 'Generating...' : 'Generate App Now'}
+                  {isGenerating 
+                    ? (conversationHistory.length > 0 ? 'Updating...' : 'Generating...') 
+                    : (conversationHistory.length > 0 ? 'Update App' : 'Generate App Now')
+                  }
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -571,5 +613,60 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  conversationContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    maxHeight: 200,
+  },
+  conversationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(100, 116, 139, 0.2)',
+  },
+  conversationTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  conversationCount: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  conversationScroll: {
+    maxHeight: 120,
+  },
+  conversationMessage: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#6366f1',
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  messageRole: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6366f1',
+  },
+  messageIndex: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  messageText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
