@@ -139,12 +139,22 @@ export default function App() {
         setConversationHistory([...messages, { role: 'assistant', content: code }]);
       }
 
-      // Skip Snack creation for now - API not publicly available
-      // TODO: Implement when Expo provides public Snack API
-      setSnackUrl(null);
-      setIsCreatingSnack(false);
+      // Create Snack URL for live preview (no API needed - uses URL params)
+      setIsCreatingSnack(true);
+      try {
+        const appName = `AI Generated: ${userMessage.substring(0, 30)}${userMessage.length > 30 ? '...' : ''}`;
+        const snack = await createSnack(code, appName);
+        setSnackUrl(snack.embedUrl);
+        console.log('✅ Snack created:', snack.url);
+      } catch (snackError) {
+        console.error('Snack creation failed:', snackError);
+        // Continue without Snack - will show fallback preview
+        setSnackUrl(null);
+      } finally {
+        setIsCreatingSnack(false);
+      }
 
-      // For fallback, show a simple success message
+      // For fallback if Snack fails, show a simple success message
       const SimplePreview = () => {
         return (
           <SafeAreaView style={{ flex: 1, backgroundColor: '#667eea' }}>
