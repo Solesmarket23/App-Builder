@@ -433,20 +433,25 @@ The user should be able to copy this code directly into Expo Snack and have it w
       console.log(`🧪 MOCK MODE: ${isFollowUp ? 'Modifying' : 'Generating'} app (test data)`);
       message = await getMockResponse(appIdea);
     } else {
+      // Split prompt into system instructions (cacheable) and user request (not cacheable)
+      const systemInstructions = prompt.split('based on this idea:')[0] + 'based on user\'s app idea below.';
+      const userRequest = `App idea: "${appIdea}"`;
+      
       // Real API call - using Sonnet 4.5 (smartest model)
       message = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 4096,
+        system: [
+          {
+            type: 'text',
+            text: systemInstructions,
+            cache_control: { type: 'ephemeral' }, // Cache the system instructions (not the user's idea)
+          },
+        ],
         messages: [
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt,
-                cache_control: { type: 'ephemeral' }, // Cache the prompt for 5 minutes
-              },
-            ],
+            content: userRequest, // User's unique request - NOT cached
           },
         ],
       });
