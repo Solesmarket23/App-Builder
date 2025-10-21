@@ -10,20 +10,27 @@ import {
   StatusBar,
   SafeAreaView,
   Platform,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { generateAppCode } from './services/anthropicService';
+import PreviewScreen from './components/PreviewScreen';
+import LoadingScreen from './components/LoadingScreen';
 
 const { width } = Dimensions.get('window');
 
 /**
- * AppBuilder - AI-powered app generator for iOS
- * Allows users to describe an app idea and generates SwiftUI code
+ * AppBuilder - AI-powered app generator
+ * Allows users to describe an app idea and generates React Native code with live preview
  */
 export default function App() {
   const [idea, setIdea] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [error, setError] = useState('');
+  const [generatedCode, setGeneratedCode] = useState(null);
+  const [GeneratedComponent, setGeneratedComponent] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Example ideas to help users get started
   const exampleIdeas = [
@@ -45,14 +52,41 @@ export default function App() {
 
     setIsGenerating(true);
     setError('');
+    setShowPreview(false);
 
     try {
-      // Simulate AI generation process
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      // TODO: Integrate actual AI generation logic
-      console.log('Generating app for idea:', idea);
+      // Generate React Native code using Anthropic AI
+      const { code } = await generateAppCode(idea);
+      setGeneratedCode(code);
+
+      // Dynamically create the component from the generated code
+      // This uses eval to execute the generated code and create a component
+      // In production, you'd want more security measures
+      const componentFunction = new Function('React', 'useState', 'useEffect', 'View', 'Text', 'ScrollView', 'TouchableOpacity', 'TextInput', 'StyleSheet', 'Image', 'FlatList', 'Dimensions', `
+        ${code}
+        return GeneratedApp;
+      `);
+
+      const Component = componentFunction(
+        React,
+        useState,
+        React.useEffect,
+        View,
+        Text,
+        ScrollView,
+        TouchableOpacity,
+        TextInput,
+        StyleSheet,
+        null, // Image placeholder
+        null, // FlatList placeholder
+        Dimensions
+      );
+
+      setGeneratedComponent(() => Component);
+      setShowPreview(true);
     } catch (err) {
-      setError('Generation failed. Please try again.');
+      console.error('Generation error:', err);
+      setError(err.message || 'Generation failed. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -73,6 +107,43 @@ export default function App() {
     setError('');
   };
 
+  /**
+   * Handles going back from preview to main screen
+   */
+  const handleBack = () => {
+    setShowPreview(false);
+  };
+
+  /**
+   * Handles exporting the generated app
+   */
+  const handleExport = () => {
+    Alert.alert(
+      'Export App',
+      'Choose how you want to export your app:',
+      [
+        {
+          text: 'Download Code',
+          onPress: () => {
+            // TODO: Implement code download
+            Alert.alert('Coming Soon', 'Code download feature will be available soon!');
+          },
+        },
+        {
+          text: 'Share Link',
+          onPress: () => {
+            // TODO: Implement share link
+            Alert.alert('Coming Soon', 'Share feature will be available soon!');
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
   // Theme colors
   const colors = {
     background: isDarkMode
@@ -88,6 +159,23 @@ export default function App() {
     chipBg: isDarkMode ? '#1e293b' : '#f3f4f6',
     chipText: isDarkMode ? '#e2e8f0' : '#1f2937',
   };
+
+  // Show loading screen during generation
+  if (isGenerating) {
+    return <LoadingScreen isDarkMode={isDarkMode} />;
+  }
+
+  // Show preview screen if app was generated
+  if (showPreview && GeneratedComponent) {
+    return (
+      <PreviewScreen
+        GeneratedComponent={GeneratedComponent}
+        onBack={handleBack}
+        onExport={handleExport}
+        isDarkMode={isDarkMode}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
