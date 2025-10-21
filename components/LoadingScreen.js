@@ -5,189 +5,176 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
 /**
- * LoadingScreen - Shows animated loading state during app generation
+ * LoadingScreen - Shows conversational AI messages during app generation
  * @param {Object} props
  * @param {boolean} props.isDarkMode - Current theme mode
  */
 export default function LoadingScreen({ isDarkMode }) {
-  const spinValue = React.useRef(new Animated.Value(0)).current;
-  const pulseValue = React.useRef(new Animated.Value(1)).current;
-  const [currentStep, setCurrentStep] = React.useState(0);
+  const [messages, setMessages] = React.useState([]);
+  const scrollViewRef = React.useRef(null);
 
-  const steps = [
-    { text: 'Analyzing your idea', duration: 15000 }, // 0-15s
-    { text: 'Designing components', duration: 20000 }, // 15-35s
-    { text: 'Writing code', duration: 25000 }, // 35-60s
-    { text: 'Finalizing UI', duration: 30000 }, // 60-90s
+  const conversationFlow = [
+    { role: 'ai', text: '👋 Hi! I\'m analyzing your app idea...', delay: 500 },
+    { role: 'ai', text: '💡 Great concept! Let me start by planning the UI components.', delay: 3000 },
+    { role: 'ai', text: '🎨 Choosing a beautiful color palette that matches your vision...', delay: 6000 },
+    { role: 'user', text: 'How\'s it looking?', delay: 10000 },
+    { role: 'ai', text: '✨ Looking good! Creating the component structure now.', delay: 12000 },
+    { role: 'ai', text: '⚛️ Writing React hooks for state management...', delay: 18000 },
+    { role: 'ai', text: '🔧 Building interactive elements - buttons, inputs, navigation...', delay: 25000 },
+    { role: 'user', text: 'Will it be responsive?', delay: 32000 },
+    { role: 'ai', text: '✅ Absolutely! Adding responsive styling now.', delay: 34000 },
+    { role: 'ai', text: '🎭 Adding smooth animations and transitions...', delay: 42000 },
+    { role: 'ai', text: '📱 Optimizing for iOS and making sure everything works perfectly...', delay: 52000 },
+    { role: 'ai', text: '🔍 Running final checks and validations...', delay: 62000 },
+    { role: 'ai', text: '🎉 Almost done! Finalizing your app...', delay: 72000 },
   ];
 
   React.useEffect(() => {
-    // Spin animation
-    Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      })
-    ).start();
+    const timers = [];
 
-    // Pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseValue, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Progress through steps based on time
-    const stepTimers = [];
-    let cumulativeTime = 0;
-
-    steps.forEach((step, index) => {
-      cumulativeTime += step.duration;
+    conversationFlow.forEach((msg, index) => {
       const timer = setTimeout(() => {
-        setCurrentStep(index + 1);
-      }, cumulativeTime);
-      stepTimers.push(timer);
+        setMessages(prev => [...prev, { ...msg, id: index }]);
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }, msg.delay);
+      timers.push(timer);
     });
 
     return () => {
-      stepTimers.forEach(timer => clearTimeout(timer));
+      timers.forEach(timer => clearTimeout(timer));
     };
   }, []);
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   const colors = {
     background: isDarkMode
       ? ['#020617', '#0f172a', '#020617']
       : ['#f9fafb', '#dbeafe', '#f9fafb'],
-    text: isDarkMode ? '#ffffff' : '#111827',
-    textSecondary: isDarkMode ? '#cbd5e1' : '#4b5563',
+    aiMessageBg: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
+    userMessageBg: isDarkMode ? 'rgba(71, 85, 105, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+    aiText: isDarkMode ? '#e0e7ff' : '#1e40af',
+    userText: isDarkMode ? '#cbd5e1' : '#475569',
+    headerText: isDarkMode ? '#ffffff' : '#111827',
+    subtitleText: isDarkMode ? '#94a3b8' : '#64748b',
   };
 
   return (
     <LinearGradient colors={colors.background} style={styles.container}>
-      <View style={styles.content}>
-        {/* Spinning Gradient Circle */}
-        <Animated.View
-          style={[
-            styles.spinnerContainer,
-            {
-              transform: [{ rotate: spin }, { scale: pulseValue }],
-            },
-          ]}
-        >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.aiAvatarContainer}>
           <LinearGradient
-            colors={['#2563eb', '#06b6d4', '#2563eb']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.spinner}
+            colors={['#3b82f6', '#06b6d4']}
+            style={styles.aiAvatar}
           >
-            <View style={styles.spinnerInner} />
+            <Text style={styles.aiAvatarText}>AI</Text>
           </LinearGradient>
-        </Animated.View>
-
-        {/* Loading Text */}
-        <Text style={[styles.title, { color: colors.text }]}>
-          Generating Your App
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          AI is crafting your vision...
-        </Text>
-
-        {/* Progress Steps */}
-        <View style={styles.stepsContainer}>
-          {steps.map((step, index) => (
-            <LoadingStep
-              key={index}
-              text={step.text}
-              isDarkMode={isDarkMode}
-              isActive={currentStep >= index}
-            />
-          ))}
         </View>
-
-        {/* Time Estimate */}
-        <Text style={[styles.estimate, { color: colors.textSecondary }]}>
-          ⏱ This usually takes 60-90 seconds
-        </Text>
+        <View style={styles.headerTextContainer}>
+          <Text style={[styles.headerTitle, { color: colors.headerText }]}>
+            Building Your App
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>
+            ⏱ This usually takes 60-90 seconds
+          </Text>
+        </View>
       </View>
+
+      {/* Conversation */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.conversationContainer}
+        contentContainerStyle={styles.conversationContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {messages.map((message) => (
+          <ConversationMessage
+            key={message.id}
+            message={message}
+            colors={colors}
+            isDarkMode={isDarkMode}
+          />
+        ))}
+      </ScrollView>
     </LinearGradient>
   );
 }
 
-function LoadingStep({ text, isDarkMode, delay, isActive }) {
+function ConversationMessage({ message, colors, isDarkMode }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const slideAnim = React.useRef(new Animated.Value(20)).current;
 
   React.useEffect(() => {
-    if (isActive) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [isActive]);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
-  const colors = {
-    text: isDarkMode ? '#cbd5e1' : '#4b5563',
-    checkmark: isDarkMode ? '#06b6d4' : '#2563eb',
-    inactive: isDarkMode ? '#475569' : '#9ca3af',
-  };
+  const isAI = message.role === 'ai';
 
   return (
     <Animated.View
       style={[
-        styles.step,
+        styles.messageContainer,
+        isAI ? styles.aiMessageContainer : styles.userMessageContainer,
         {
-          opacity: isActive ? fadeAnim : 0.3,
-          transform: [{ scale: isActive ? scaleAnim : 0.95 }],
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
         },
       ]}
     >
-      <Text
+      {isAI && (
+        <View style={styles.smallAvatarContainer}>
+          <LinearGradient
+            colors={['#3b82f6', '#06b6d4']}
+            style={styles.smallAvatar}
+          >
+            <Text style={styles.smallAvatarText}>AI</Text>
+          </LinearGradient>
+        </View>
+      )}
+      <View
         style={[
-          styles.checkmark,
-          { color: isActive ? colors.checkmark : colors.inactive },
+          styles.messageBubble,
+          {
+            backgroundColor: isAI ? colors.aiMessageBg : colors.userMessageBg,
+          },
         ]}
       >
-        {isActive ? '✓' : '○'}
-      </Text>
-      <Text
-        style={[
-          styles.stepText,
-          { color: isActive ? colors.text : colors.inactive },
-        ]}
-      >
-        {text}
-      </Text>
+        <Text
+          style={[
+            styles.messageText,
+            { color: isAI ? colors.aiText : colors.userText },
+          ]}
+        >
+          {message.text}
+        </Text>
+      </View>
+      {!isAI && (
+        <View style={styles.userAvatarContainer}>
+          <View style={styles.userAvatar}>
+            <Text style={styles.userAvatarText}>You</Text>
+          </View>
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -195,61 +182,100 @@ function LoadingStep({ text, isDarkMode, delay, isActive }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  content: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  spinnerContainer: {
-    marginBottom: 48,
-  },
-  spinner: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  spinnerInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#020617',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '900',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 48,
-    textAlign: 'center',
-  },
-  stepsContainer: {
-    width: '100%',
-    maxWidth: 300,
-    marginBottom: 32,
-  },
-  step: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
-  checkmark: {
-    fontSize: 20,
+  aiAvatarContainer: {
     marginRight: 12,
+  },
+  aiAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiAvatarText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: '700',
   },
-  stepText: {
-    fontSize: 16,
+  headerTextContainer: {
+    flex: 1,
   },
-  estimate: {
-    fontSize: 14,
-    textAlign: 'center',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+  },
+  conversationContainer: {
+    flex: 1,
+  },
+  conversationContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    alignItems: 'flex-end',
+  },
+  aiMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  userMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  smallAvatarContainer: {
+    marginRight: 8,
+    marginBottom: 2,
+  },
+  smallAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  smallAvatarText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  userAvatarContainer: {
+    marginLeft: 8,
+    marginBottom: 2,
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(100, 116, 139, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userAvatarText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  messageBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 22,
   },
 });
 

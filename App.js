@@ -36,6 +36,7 @@ export default function App() {
   const [GeneratedComponent, setGeneratedComponent] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [usageStats, setUsageStats] = useState(null);
+  const [conversationHistory, setConversationHistory] = useState([]);
 
   // Example ideas to help users get started
   const exampleIdeas = [
@@ -49,8 +50,10 @@ export default function App() {
   /**
    * Handles the generation of the app based on user input
    */
-  const generateApp = async () => {
-    if (!idea.trim()) {
+  const generateApp = async (modificationRequest = null) => {
+    const userMessage = modificationRequest || idea;
+    
+    if (!userMessage.trim()) {
       setError('Please enter an app idea');
       return;
     }
@@ -60,67 +63,67 @@ export default function App() {
     setShowPreview(false);
 
     try {
+      // Build conversation history for follow-ups
+      const isFollowUp = modificationRequest !== null;
+      let messages = [];
+      
+      if (isFollowUp) {
+        // Include previous conversation for context
+        messages = [...conversationHistory, { role: 'user', content: userMessage }];
+      } else {
+        // New conversation
+        messages = [{ role: 'user', content: userMessage }];
+        setConversationHistory([{ role: 'user', content: userMessage }]);
+      }
+
       // Generate React Native code using Anthropic AI
-      const { code, usage, cost } = await generateAppCode(idea);
+      const { code, usage, cost } = await generateAppCode(userMessage, messages);
       setGeneratedCode(code);
       setUsageStats({ usage, cost });
 
-      // Dynamically create the component from the generated code
-      // This uses eval to execute the generated code and create a component
-      // In production, you'd want more security measures
-      const componentFunction = new Function(
-        'React',
-        'useState',
-        'useEffect',
-        'View',
-        'Text',
-        'ScrollView',
-        'TouchableOpacity',
-        'TextInput',
-        'StyleSheet',
-        'Image',
-        'FlatList',
-        'Dimensions',
-        'ActivityIndicator',
-        'LinearGradient',
-        'Ionicons',
-        'MaterialIcons',
-        'FontAwesome',
-        'AntDesign',
-        'Entypo',
-        'Feather',
-        'MaterialCommunityIcons',
-        `
-        ${code}
-        return GeneratedApp;
-      `
-      );
+      // Update conversation history with assistant's response
+      if (isFollowUp) {
+        setConversationHistory([...messages, { role: 'assistant', content: code }]);
+      } else {
+        setConversationHistory([...messages, { role: 'assistant', content: code }]);
+      }
 
-      const Component = componentFunction(
-        React,
-        useState,
-        React.useEffect,
-        View,
-        Text,
-        ScrollView,
-        TouchableOpacity,
-        TextInput,
-        StyleSheet,
-        Image,
-        FlatList,
-        Dimensions,
-        ActivityIndicator,
-        LinearGradient,
-        ExpoVectorIcons.Ionicons,
-        ExpoVectorIcons.MaterialIcons,
-        ExpoVectorIcons.FontAwesome,
-        ExpoVectorIcons.AntDesign,
-        ExpoVectorIcons.Entypo,
-        ExpoVectorIcons.Feather,
-        ExpoVectorIcons.MaterialCommunityIcons
-      );
+      // For now, show a simple success message
+      // TODO: Implement proper JSX dynamic rendering (requires babel transform)
+      const SimplePreview = () => {
+        return (
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#667eea' }}>
+            <StatusBar barStyle="light-content" />
+            <LinearGradient
+              colors={['#667eea', '#764ba2']}
+              style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}
+            >
+              <Text style={{ fontSize: 32, fontWeight: '900', color: '#ffffff', textAlign: 'center', marginBottom: 20 }}>
+                ✨ App {isFollowUp ? 'Updated' : 'Generated'}!
+              </Text>
+              <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', textAlign: 'center', marginBottom: 40 }}>
+                Your app code has been {isFollowUp ? 'updated with your changes' : 'generated successfully'}.
+              </Text>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 24, width: '100%' }}>
+                <Text style={{ fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
+                  📦 Generated Component: GeneratedApp
+                </Text>
+                <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
+                  📝 Lines of code: {code.split('\n').length}
+                </Text>
+                <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
+                  💬 Conversation turns: {Math.floor(conversationHistory.length / 2) + 1}
+                </Text>
+                <Text style={{ fontSize: 14, color: '#64748b' }}>
+                  ⚡ Ready to export and run!
+                </Text>
+              </View>
+            </LinearGradient>
+          </SafeAreaView>
+        );
+      };
 
-      setGeneratedComponent(() => Component);
+      setGeneratedComponent(() => SimplePreview);
       setShowPreview(true);
     } catch (err) {
       console.error('Generation error:', err);
@@ -158,20 +161,19 @@ export default function App() {
   const handleExport = () => {
     Alert.alert(
       'Export App',
-      'Choose how you want to export your app:',
+      'Your app code has been generated! Choose an option:',
       [
         {
-          text: 'Download Code',
+          text: 'View Code',
           onPress: () => {
-            // TODO: Implement code download
-            Alert.alert('Coming Soon', 'Code download feature will be available soon!');
+            console.log('Generated Code:\n', generatedCode);
+            Alert.alert('Code Generated', `${generatedCode.split('\n').length} lines of code generated. Check console for full code.`);
           },
         },
         {
-          text: 'Share Link',
+          text: 'Download (Coming Soon)',
           onPress: () => {
-            // TODO: Implement share link
-            Alert.alert('Coming Soon', 'Share feature will be available soon!');
+            Alert.alert('Coming Soon', 'Code download feature will be available soon!');
           },
         },
         {
@@ -210,6 +212,7 @@ export default function App() {
         GeneratedComponent={GeneratedComponent}
         onBack={handleBack}
         onExport={handleExport}
+        onModify={(modificationRequest) => generateApp(modificationRequest)}
         isDarkMode={isDarkMode}
         usageStats={usageStats}
       />

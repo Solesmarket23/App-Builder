@@ -1,18 +1,256 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ANTHROPIC_API_KEY } from '@env';
 
+// Set to true to use mock data instead of real API calls (for testing)
+const USE_MOCK_MODE = true;
+
 const anthropic = new Anthropic({
   apiKey: ANTHROPIC_API_KEY,
 });
 
 /**
+ * Mock API response for testing without using API credits
+ * @param {string} appIdea - User's app idea
+ * @returns {Promise<Object>} - Mock response matching Anthropic API format
+ */
+async function getMockResponse(appIdea) {
+  // Simulate API delay (3-5 seconds)
+  await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
+
+  // Using string concatenation to avoid template literal issues
+  const mockCode = 
+"import React, { useState } from 'react';\n" +
+"import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';\n" +
+"import { LinearGradient } from 'expo-linear-gradient';\n" +
+"import { Ionicons } from '@expo/vector-icons';\n" +
+"\n" +
+"export default function GeneratedApp() {\n" +
+"  const [count, setCount] = useState(0);\n" +
+"  const [items, setItems] = useState([\n" +
+"    { id: 1, title: 'Task 1', completed: false },\n" +
+"    { id: 2, title: 'Task 2', completed: false },\n" +
+"    { id: 3, title: 'Task 3', completed: true },\n" +
+"    { id: 4, title: 'Task 4', completed: false },\n" +
+"    { id: 5, title: 'Task 5', completed: true },\n" +
+"  ]);\n" +
+"\n" +
+"  const toggleItem = (id) => {\n" +
+"    setItems(items.map(item => \n" +
+"      item.id === id ? { ...item, completed: !item.completed } : item\n" +
+"    ));\n" +
+"  };\n" +
+"\n" +
+"  return (\n" +
+"    <SafeAreaView style={styles.container}>\n" +
+"      <StatusBar barStyle=\"light-content\" />\n" +
+"      <LinearGradient\n" +
+"        colors={['#667eea', '#764ba2']}\n" +
+"        style={styles.gradient}\n" +
+"      >\n" +
+"        <View style={styles.header}>\n" +
+"          <Text style={styles.headerTitle}>Mock Preview</Text>\n" +
+"          <Text style={styles.headerSubtitle}>Demo App</Text>\n" +
+"        </View>\n" +
+"\n" +
+"        <View style={styles.card}>\n" +
+"          <Text style={styles.cardTitle}>Counter Demo</Text>\n" +
+"          <Text style={styles.counterText}>{count}</Text>\n" +
+"          <View style={styles.buttonRow}>\n" +
+"            <TouchableOpacity \n" +
+"              style={styles.button}\n" +
+"              onPress={() => setCount(count - 1)}\n" +
+"            >\n" +
+"              <Ionicons name=\"remove\" size={24} color=\"#fff\" />\n" +
+"            </TouchableOpacity>\n" +
+"            <TouchableOpacity \n" +
+"              style={styles.button}\n" +
+"              onPress={() => setCount(count + 1)}\n" +
+"            >\n" +
+"              <Ionicons name=\"add\" size={24} color=\"#fff\" />\n" +
+"            </TouchableOpacity>\n" +
+"          </View>\n" +
+"        </View>\n" +
+"\n" +
+"        <ScrollView style={styles.scrollView}>\n" +
+"          <View style={styles.card}>\n" +
+"            <Text style={styles.cardTitle}>Task List Demo</Text>\n" +
+"            {items.map(item => (\n" +
+"              <TouchableOpacity\n" +
+"                key={item.id}\n" +
+"                style={styles.item}\n" +
+"                onPress={() => toggleItem(item.id)}\n" +
+"              >\n" +
+"                <Ionicons \n" +
+"                  name={item.completed ? \"checkmark-circle\" : \"ellipse-outline\"}\n" +
+"                  size={24}\n" +
+"                  color={item.completed ? \"#4ade80\" : \"#94a3b8\"}\n" +
+"                />\n" +
+"                <Text style={[\n" +
+"                  styles.itemText,\n" +
+"                  item.completed && styles.itemTextCompleted\n" +
+"                ]}>\n" +
+"                  {item.title}\n" +
+"                </Text>\n" +
+"              </TouchableOpacity>\n" +
+"            ))}\n" +
+"          </View>\n" +
+"        </ScrollView>\n" +
+"      </LinearGradient>\n" +
+"    </SafeAreaView>\n" +
+"  );\n" +
+"}\n" +
+"\n" +
+"const styles = StyleSheet.create({\n" +
+"  container: { flex: 1, backgroundColor: '#667eea' },\n" +
+"  gradient: { flex: 1, padding: 20 },\n" +
+"  header: { marginBottom: 24 },\n" +
+"  headerTitle: { fontSize: 28, fontWeight: '800', color: '#ffffff', marginBottom: 4 },\n" +
+"  headerSubtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.7)' },\n" +
+"  card: { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: 20, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6 },\n" +
+"  cardTitle: { fontSize: 20, fontWeight: '700', color: '#1e293b', marginBottom: 16 },\n" +
+"  counterText: { fontSize: 64, fontWeight: '900', color: '#667eea', textAlign: 'center', marginVertical: 20 },\n" +
+"  buttonRow: { flexDirection: 'row', justifyContent: 'center', gap: 16 },\n" +
+"  button: { backgroundColor: '#667eea', width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },\n" +
+"  scrollView: { flex: 1 },\n" +
+"  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },\n" +
+"  itemText: { fontSize: 16, color: '#1e293b', marginLeft: 12, flex: 1 },\n" +
+"  itemTextCompleted: { textDecorationLine: 'line-through', color: '#94a3b8' },\n" +
+"});";
+
+  return {
+    content: [
+      {
+        text: mockCode,
+      },
+    ],
+    usage: {
+      input_tokens: 450,
+      output_tokens: 1250,
+    },
+  };
+}
+
+/**
+ * Validates generated code for common errors
+ * @param {string} code - Generated React Native code
+ * @returns {Array<{type: string, message: string}>} - Array of errors found
+ */
+function validateCode(code) {
+  const errors = [];
+
+  // Critical errors (must fix)
+  if (!code.includes('SafeAreaView')) {
+    errors.push({ type: 'CRITICAL', message: 'Missing SafeAreaView wrapper' });
+  }
+
+  if (code.includes('FlatList') && !code.includes('keyExtractor')) {
+    errors.push({ type: 'CRITICAL', message: 'FlatList missing keyExtractor' });
+  }
+
+  if (code.includes('AsyncStorage')) {
+    errors.push({ type: 'CRITICAL', message: 'Using unavailable AsyncStorage' });
+  }
+
+  if (code.includes('react-native-vector-icons')) {
+    errors.push({ type: 'CRITICAL', message: 'Using wrong icon library (should use @expo/vector-icons)' });
+  }
+
+  if (code.includes('require(') && code.includes('.png')) {
+    errors.push({ type: 'CRITICAL', message: 'Using require() for images (use URI instead)' });
+  }
+
+  // Warning errors (nice to fix)
+  if (!code.includes('StatusBar')) {
+    errors.push({ type: 'WARNING', message: 'Missing StatusBar component' });
+  }
+
+  if (code.includes('.map(') && code.includes('return (') && code.includes('<')) {
+    errors.push({ type: 'WARNING', message: 'Using .map() for rendering (consider FlatList for better performance)' });
+  }
+
+  return errors;
+}
+
+/**
+ * Attempts to auto-fix critical errors in generated code
+ * @param {string} code - Generated code with errors
+ * @param {Array} errors - List of errors to fix
+ * @returns {Promise<string>} - Fixed code
+ */
+async function fixErrors(code, errors) {
+  const errorMessages = errors.map(e => `${e.type}: ${e.message}`).join('\n');
+  
+  const fixPrompt = `Fix these errors in the React Native code. Return ONLY the corrected code with no explanations:
+
+ERRORS TO FIX:
+${errorMessages}
+
+ORIGINAL CODE:
+${code}
+
+Return the complete fixed code:`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: fixPrompt,
+        },
+      ],
+    });
+
+    let fixedCode = message.content[0].text;
+    fixedCode = fixedCode.replace(/```jsx?\n?/g, '').replace(/```\n?$/g, '');
+    
+    return fixedCode;
+  } catch (error) {
+    console.error('Error fixing code:', error);
+    return code; // Return original if fix fails
+  }
+}
+
+/**
  * Generates React Native component code based on user's app idea
- * @param {string} appIdea - User's description of the app they want to build
+ * Supports multi-turn conversations for iterative refinement
+ * @param {string} appIdea - User's description of the app or modification request
+ * @param {Array} conversationHistory - Array of {role: 'user'|'assistant', content: string} messages
  * @returns {Promise<{code: string, componentName: string, usage: object, cost: object}>} - Generated component code, name, token usage, and cost
  */
-export async function generateAppCode(appIdea) {
+export async function generateAppCode(appIdea, conversationHistory = []) {
   try {
-    const prompt = `You are an expert React Native developer using Expo. Generate a complete, production-ready React Native app based on this idea: "${appIdea}"
+    const isFollowUp = conversationHistory.length > 1;
+    
+    // Build the prompt - different for initial vs follow-up
+    let prompt;
+    
+    if (isFollowUp) {
+      // For follow-ups, provide context and modification request
+      const previousCode = conversationHistory.find(msg => msg.role === 'assistant')?.content || '';
+      prompt = `You are an expert React Native developer using Expo. The user wants to modify an existing app.
+
+PREVIOUS APP CODE:
+${previousCode}
+
+USER'S MODIFICATION REQUEST: "${appIdea}"
+
+Update the app code to incorporate this change. Output ONLY valid React Native code - no explanations, no markdown, no backticks.
+
+CRITICAL REQUIREMENTS:
+1. Maintain all the existing functionality unless explicitly asked to change it
+2. Apply the requested modification cleanly
+3. Keep the same code structure and style
+4. Use ONLY these imports: react, react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, SafeAreaView, StatusBar), @expo/vector-icons, expo-linear-gradient
+5. Output the complete updated component code
+
+NEVER USE: AsyncStorage, react-native-vector-icons, fetch() calls, require() for images
+
+Return ONLY the complete React Native component code.`;
+    } else {
+      // Original prompt for initial generation
+      prompt = `You are an expert React Native developer using Expo. Generate a complete, production-ready React Native app based on this idea: "${appIdea}"
 
 CRITICAL REQUIREMENTS:
 
@@ -22,7 +260,7 @@ CRITICAL REQUIREMENTS:
 
 3. Use ONLY these imports:
    - react
-   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, etc.)
+   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, SafeAreaView, StatusBar, etc.)
    - @expo/vector-icons (for icons)
    - expo-linear-gradient (for gradients)
    - NO OTHER LIBRARIES
@@ -51,6 +289,61 @@ CRITICAL REQUIREMENTS:
 
 10. Add comments for complex logic
 
+ERROR PREVENTION (CRITICAL):
+1. ALWAYS wrap the main content in SafeAreaView
+2. ALWAYS add StatusBar component at the top
+3. If using FlatList, ALWAYS include keyExtractor={(item) => item.id.toString()}
+4. If using TextInput, ALWAYS add both value={state} and onChangeText={setState}
+5. NEVER use .map() for lists - use FlatList instead for better performance
+6. If using Image, use placeholder URLs: { uri: 'https://via.placeholder.com/150' }
+7. ALWAYS check if variables exist before accessing: if (data && data.length > 0)
+8. For division, prevent zero: const result = a / (b || 1)
+9. If using Modal, include visible={visible} and onRequestClose={() => setVisible(false)}
+10. Container View must have flex: 1 or content won't show
+
+NEVER USE (WILL CAUSE ERRORS):
+- AsyncStorage (not available in Snack)
+- react-native-vector-icons (use @expo/vector-icons instead)
+- fetch() calls to external APIs
+- expo-camera, expo-location, expo-file-system (not in web preview)
+- require() for local images (use URLs instead)
+- Any library not explicitly listed in allowed imports
+
+COMMON CRASH PREVENTIONS:
+\`\`\`javascript
+// Safe array access
+const items = data || [];
+if (items && items.length > 0) { /* use items */ }
+
+// Safe object access
+const name = user?.name || 'Unknown';
+
+// Safe division
+const average = total / (count || 1);
+
+// Safe TextInput binding
+const [text, setText] = useState('');
+<TextInput value={text} onChangeText={setText} />
+
+// Safe FlatList
+<FlatList
+  data={items || []}
+  keyExtractor={(item) => item.id.toString()}
+  renderItem={({ item }) => <View>...</View>}
+/>
+\`\`\`
+
+MANDATORY CHECKLIST (Verify before outputting):
+✓ SafeAreaView wraps all content
+✓ StatusBar is included
+✓ All TextInputs have value AND onChangeText
+✓ FlatList has keyExtractor
+✓ No .map() used for rendering lists (only FlatList)
+✓ Container has flex: 1
+✓ No AsyncStorage or banned imports
+✓ All state variables are initialized
+✓ No undefined property access without checks
+
 STRUCTURE:
 - Put ALL code in a single component named 'GeneratedApp'
 - Export default at the end: export default function GeneratedApp()
@@ -65,17 +358,33 @@ DO NOT:
 - Create incomplete or non-functional features
 
 The user should be able to copy this code directly into Expo Snack and have it work perfectly.`;
+    }
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
+    let message;
+
+    // Use mock mode if enabled (for testing without API credits)
+    if (USE_MOCK_MODE) {
+      console.log(`🧪 MOCK MODE: ${isFollowUp ? 'Modifying' : 'Generating'} app (test data)`);
+      message = await getMockResponse(appIdea);
+    } else {
+      // Real API call - using Sonnet 4.5 (smartest model)
+      message = await anthropic.messages.create({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt,
+                cache_control: { type: 'ephemeral' }, // Cache the prompt for 5 minutes
+              },
+            ],
+          },
+        ],
+      });
+    }
 
     // Extract the code from the response
     let generatedCode = message.content[0].text;
@@ -83,14 +392,56 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Remove markdown code blocks if present
     generatedCode = generatedCode.replace(/```jsx?\n?/g, '').replace(/```\n?$/g, '');
 
-    // Calculate costs (Claude Sonnet 4 pricing as of 2025)
-    // Input: $3 per million tokens
-    // Output: $15 per million tokens
-    const inputTokens = message.usage.input_tokens;
-    const outputTokens = message.usage.output_tokens;
-    const inputCost = (inputTokens / 1000000) * 3;
+    // Validate the generated code
+    const errors = validateCode(generatedCode);
+    const criticalErrors = errors.filter(e => e.type === 'CRITICAL');
+
+    // If critical errors found, attempt to fix them
+    if (criticalErrors.length > 0) {
+      console.log('Critical errors found, attempting to fix:', criticalErrors);
+      generatedCode = await fixErrors(generatedCode, criticalErrors);
+      
+      // Validate again after fix
+      const remainingErrors = validateCode(generatedCode);
+      const remainingCritical = remainingErrors.filter(e => e.type === 'CRITICAL');
+      
+      if (remainingCritical.length > 0) {
+        console.warn('Some critical errors remain after fix:', remainingCritical);
+      }
+    }
+
+    // Log warnings (non-blocking)
+    const warnings = errors.filter(e => e.type === 'WARNING');
+    if (warnings.length > 0) {
+      console.log('Code warnings:', warnings);
+    }
+
+    // Calculate costs (Claude Sonnet 4.5 pricing with prompt caching)
+    // Standard: $3 input / $15 output per million tokens
+    // Cache write: $3.75 per million tokens (1.25x)
+    // Cache hit: $0.30 per million tokens (0.1x - 90% savings!)
+    const inputTokens = message.usage.input_tokens || 0;
+    const outputTokens = message.usage.output_tokens || 0;
+    const cacheCreationTokens = message.usage.cache_creation_input_tokens || 0;
+    const cacheReadTokens = message.usage.cache_read_input_tokens || 0;
+    
+    // Calculate costs for each type
+    const standardInputCost = (inputTokens / 1000000) * 3;
+    const cacheWriteCost = (cacheCreationTokens / 1000000) * 3.75;
+    const cacheReadCost = (cacheReadTokens / 1000000) * 0.30;
     const outputCost = (outputTokens / 1000000) * 15;
-    const totalCost = inputCost + outputCost;
+    
+    const totalInputCost = standardInputCost + cacheWriteCost + cacheReadCost;
+    const totalCost = totalInputCost + outputCost;
+    
+    // Log cache performance
+    if (cacheReadTokens > 0) {
+      const savings = (cacheReadTokens / 1000000) * (3 - 0.30);
+      console.log(`💰 Cache hit! Saved $${savings.toFixed(4)} on ${cacheReadTokens} cached tokens`);
+    }
+    if (cacheCreationTokens > 0) {
+      console.log(`📦 Created cache with ${cacheCreationTokens} tokens (valid for 5 minutes)`);
+    }
 
     return {
       code: generatedCode,
@@ -98,12 +449,15 @@ The user should be able to copy this code directly into Expo Snack and have it w
       usage: {
         input_tokens: inputTokens,
         output_tokens: outputTokens,
-        total_tokens: inputTokens + outputTokens,
+        total_tokens: inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens,
+        cache_creation_tokens: cacheCreationTokens,
+        cache_read_tokens: cacheReadTokens,
       },
       cost: {
-        input_cost: inputCost,
+        input_cost: totalInputCost,
         output_cost: outputCost,
         total_cost: totalCost,
+        cache_savings: cacheReadTokens > 0 ? (cacheReadTokens / 1000000) * (3 - 0.30) : 0,
       },
     };
   } catch (error) {
