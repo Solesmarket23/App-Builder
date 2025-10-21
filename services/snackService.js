@@ -45,11 +45,15 @@ export async function createSnack(code, name = 'AI Generated App') {
     }
 
     const data = await response.json();
+    console.log('Snack API response:', data); // Debug log
+    
+    // The response returns { id: "xxx" } and URL should be snack.expo.dev/{id}
+    const snackId = data.id || data.hash_id;
     
     return {
-      url: `https://snack.expo.dev/@${data.id}`,
-      embedUrl: `https://snack.expo.dev/embedded/@${data.id}?preview=true&platform=ios`,
-      id: data.id,
+      url: `https://snack.expo.dev/${snackId}`,
+      embedUrl: `https://snack.expo.dev/embedded/${snackId}?preview=true&platform=ios`,
+      id: snackId,
     };
   } catch (error) {
     console.error('Error creating Snack:', error);
