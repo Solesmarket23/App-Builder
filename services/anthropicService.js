@@ -242,10 +242,12 @@ CRITICAL REQUIREMENTS:
 1. Maintain all the existing functionality unless explicitly asked to change it
 2. Apply the requested modification cleanly
 3. Keep the same code structure and style
-4. Use ONLY these imports: react, react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, SafeAreaView, StatusBar), @expo/vector-icons, expo-linear-gradient
-5. Output the complete updated component code
+4. ALWAYS import SafeAreaView from 'react-native-safe-area-context' (NOT react-native)
+5. Use ONLY these imports: react, react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, StatusBar), react-native-safe-area-context (SafeAreaView), @expo/vector-icons, expo-linear-gradient
+6. Output the complete updated component code
+7. Follow iOS Human Interface Guidelines (generous spacing, 44pt touch targets, iOS colors)
 
-NEVER USE: AsyncStorage, react-native-vector-icons, fetch() calls, require() for images
+NEVER USE: SafeAreaView from react-native, AsyncStorage, react-native-vector-icons, fetch() calls, require() for images
 
 Return ONLY the complete React Native component code.`;
     } else {
@@ -260,28 +262,33 @@ CRITICAL REQUIREMENTS:
 
 3. Use ONLY these imports:
    - react
-   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, SafeAreaView, StatusBar, etc.)
+   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, StatusBar, etc.)
+   - react-native-safe-area-context (SafeAreaView - REQUIRED for safe areas)
    - @expo/vector-icons (for icons)
    - expo-linear-gradient (for gradients)
    - NO OTHER LIBRARIES
 
 4. Create a complete, working app with:
    - Proper state management using useState and useEffect
-   - Have 20,000 UI and UX designers each with 20 years of experience implement a clean and modern UI with good spacing and colors
+   - Clean, modern UI optimized for iOS following Apple's Human Interface Guidelines
    - Interactive elements that actually work
    - Sample data where needed (at least 5-10 items)
-   - Smooth user experience
+   - Smooth, delightful user experience
 
 5. Use StyleSheet.create() for ALL styling
 
 6. Include proper error handling
 
-7. Make it visually appealing with:
-   - Modern color palette
-   - Good typography (use different font sizes and weights)
-   - Proper spacing and padding
-   - Box shadows where appropriate
-   - Smooth animations for interactions
+7. iOS Human Interface Guidelines (CRITICAL):
+   - Use generous spacing (minimum 16px padding)
+   - Touch targets minimum 44x44 points
+   - Use SF Symbols-style icons from @expo/vector-icons
+   - Implement subtle animations for interactions
+   - Use iOS-native colors (blues, greens from iOS palette)
+   - Clear visual hierarchy with proper font sizes
+   - Rounded corners (12-16px borderRadius)
+   - Shadows for depth (iOS-style subtle shadows)
+   - Use double quotes for all strings (no apostrophes in single quotes)
 
 8. The app should be immediately runnable in Expo Go
 
@@ -290,18 +297,21 @@ CRITICAL REQUIREMENTS:
 10. Add comments for complex logic
 
 ERROR PREVENTION (CRITICAL):
-1. ALWAYS wrap the main content in SafeAreaView
-2. ALWAYS add StatusBar component at the top
-3. If using FlatList, ALWAYS include keyExtractor={(item) => item.id.toString()}
-4. If using TextInput, ALWAYS add both value={state} and onChangeText={setState}
-5. NEVER use .map() for lists - use FlatList instead for better performance
-6. If using Image, use placeholder URLs: { uri: 'https://via.placeholder.com/150' }
-7. ALWAYS check if variables exist before accessing: if (data && data.length > 0)
-8. For division, prevent zero: const result = a / (b || 1)
-9. If using Modal, include visible={visible} and onRequestClose={() => setVisible(false)}
-10. Container View must have flex: 1 or content won't show
+1. ALWAYS import SafeAreaView from 'react-native-safe-area-context' (NOT from 'react-native')
+2. ALWAYS wrap the main content in <SafeAreaView style={{flex: 1}} edges={['top', 'bottom']}>
+3. ALWAYS add StatusBar component at the top
+4. If using FlatList, ALWAYS include keyExtractor={(item) => item.id.toString()}
+5. If using TextInput, ALWAYS add both value={state} and onChangeText={setState}
+6. NEVER use .map() for lists - use FlatList instead for better performance
+7. If using Image, use placeholder URLs: { uri: 'https://via.placeholder.com/150' }
+8. ALWAYS check if variables exist before accessing: if (data && data.length > 0)
+9. For division, prevent zero: const result = a / (b || 1)
+10. If using Modal, include visible={visible} and onRequestClose={() => setVisible(false)}
+11. Container View must have flex: 1 or content won't show
+12. Use double quotes consistently (avoid apostrophes in single-quoted strings)
 
 NEVER USE (WILL CAUSE ERRORS):
+- SafeAreaView from 'react-native' (use react-native-safe-area-context instead)
 - AsyncStorage (not available in Snack)
 - react-native-vector-icons (use @expo/vector-icons instead)
 - fetch() calls to external APIs
@@ -311,18 +321,21 @@ NEVER USE (WILL CAUSE ERRORS):
 
 COMMON CRASH PREVENTIONS:
 \`\`\`javascript
+// Correct SafeAreaView import
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 // Safe array access
 const items = data || [];
 if (items && items.length > 0) { /* use items */ }
 
 // Safe object access
-const name = user?.name || 'Unknown';
+const name = user?.name || "Unknown";
 
 // Safe division
 const average = total / (count || 1);
 
 // Safe TextInput binding
-const [text, setText] = useState('');
+const [text, setText] = useState("");
 <TextInput value={text} onChangeText={setText} />
 
 // Safe FlatList
@@ -331,10 +344,17 @@ const [text, setText] = useState('');
   keyExtractor={(item) => item.id.toString()}
   renderItem={({ item }) => <View>...</View>}
 />
+
+// Correct SafeAreaView usage
+<SafeAreaView style={{flex: 1}} edges={['top', 'bottom']}>
+  <StatusBar barStyle="dark-content" />
+  {/* Your content */}
+</SafeAreaView>
 \`\`\`
 
 MANDATORY CHECKLIST (Verify before outputting):
-✓ SafeAreaView wraps all content
+✓ SafeAreaView imported from 'react-native-safe-area-context' (NOT react-native)
+✓ SafeAreaView wraps all content with edges prop
 ✓ StatusBar is included
 ✓ All TextInputs have value AND onChangeText
 ✓ FlatList has keyExtractor
@@ -343,6 +363,8 @@ MANDATORY CHECKLIST (Verify before outputting):
 ✓ No AsyncStorage or banned imports
 ✓ All state variables are initialized
 ✓ No undefined property access without checks
+✓ iOS HIG spacing (min 16px padding, 44pt touch targets)
+✓ Double quotes used consistently
 
 STRUCTURE:
 - Put ALL code in a single component named 'GeneratedApp'

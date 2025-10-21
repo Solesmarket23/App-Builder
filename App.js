@@ -8,13 +8,13 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   Platform,
   Alert,
   Image,
   FlatList,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ExpoVectorIcons from '@expo/vector-icons';
 import { generateAppCode } from './services/anthropicService';
@@ -228,14 +228,15 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor="transparent"
-        translucent
-      />
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor="transparent"
+          translucent
+        />
 
-      <LinearGradient colors={colors.background} style={styles.gradient}>
+        <LinearGradient colors={colors.background} style={styles.gradient}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -444,6 +445,7 @@ export default function App() {
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
