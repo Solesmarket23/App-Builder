@@ -471,6 +471,15 @@ The user should be able to copy this code directly into Expo Snack and have it w
       const systemInstructions = prompt.split('based on this idea:')[0] + 'based on user\'s app idea below.';
       const userRequest = `App idea: "${appIdea}"`;
       
+      // Add intermediate progress update (API calls can take 20-60 seconds)
+      setTimeout(() => {
+        if (onProgress) onProgress('AI is thinking...', true);
+      }, 5000);
+      
+      setTimeout(() => {
+        if (onProgress) onProgress('Building your app...', true);
+      }, 15000);
+      
       // Real API call - using Sonnet 4.5 (smartest model)
       message = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929',
