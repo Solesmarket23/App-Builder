@@ -316,11 +316,11 @@ CRITICAL REQUIREMENTS:
 
 **SYNTAX IS CRITICAL - ALL CODE MUST BE SYNTACTICALLY PERFECT WITH NO ERRORS**
 
-1. Output ONLY valid React Native code with Expo - no explanations, no markdown, no backticks
+1. Output ONLY valid React Native code with Expo - **NO** explanations, **NO** markdown headers (###, ##), **NO** backticks, **NO** documentation text
 
 2. **EVERY statement must end with proper punctuation (semicolons, commas, brackets)**
 
-3. Start with: import React from 'react';
+3. Start IMMEDIATELY with: import React from 'react';
 
 3. Use ONLY these imports (NOTHING ELSE):
    - react
@@ -445,6 +445,8 @@ STRUCTURE:
 DO NOT:
 - Include any explanations before or after the code
 - Use markdown code blocks or backticks
+- Include markdown headers (###, ##, #) or documentation text
+- Include file path comments like "components/ColorSliders.tsx"
 - Import libraries that aren't listed above
 - Leave placeholder comments like "// Add more features here"
 - Create incomplete or non-functional features
@@ -499,6 +501,22 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Remove markdown code blocks (```jsx, ```javascript, ```)
     generatedCode = generatedCode.replace(/```(?:jsx?|javascript|typescript|ts)?\n?/gi, '');
     generatedCode = generatedCode.replace(/```\n?$/g, '');
+    
+    // Remove markdown headers and documentation (###, ##, #, etc.)
+    generatedCode = generatedCode.split('\n')
+      .filter(line => {
+        const trimmed = line.trim();
+        // Remove lines that are markdown headers, documentation, or explanations
+        return !(
+          trimmed.startsWith('###') ||
+          trimmed.startsWith('##') ||
+          trimmed.startsWith('# ') ||
+          trimmed.match(/^[A-Z][a-z]+\s+[A-Z]/) || // Likely a title like "Color Picker App"
+          trimmed.startsWith('**') || // Bold markdown
+          trimmed.startsWith('---') // Horizontal rule
+        );
+      })
+      .join('\n');
     
     // Remove any explanatory text before the first import
     const firstImportIndex = generatedCode.indexOf('import ');
