@@ -139,56 +139,74 @@ export default function App() {
         setConversationHistory([...messages, { role: 'assistant', content: code }]);
       }
 
-      // Create Snack URL for live preview (no API needed - uses URL params)
+      // Create Snack for live preview in WebView
       setIsCreatingSnack(true);
       try {
         const appName = `AI Generated: ${userMessage.substring(0, 30)}${userMessage.length > 30 ? '...' : ''}`;
         const snack = await createSnack(code, appName);
         setSnackUrl(snack.embedUrl);
         console.log('✅ Snack created:', snack.url);
+        
+        // Create a fallback component (in case WebView doesn't load)
+        const SimplePreview = () => {
+          return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#667eea' }}>
+              <StatusBar barStyle="light-content" />
+              <LinearGradient
+                colors={['#667eea', '#764ba2']}
+                style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 32, fontWeight: '900', color: '#ffffff', textAlign: 'center', marginBottom: 20 }}>
+                  App {isModification ? 'Updated' : 'Generated'}!
+                </Text>
+                <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', textAlign: 'center', marginBottom: 40 }}>
+                  Loading live preview...
+                </Text>
+              </LinearGradient>
+            </SafeAreaView>
+          );
+        };
+        
+        setGeneratedComponent(() => SimplePreview);
       } catch (snackError) {
         console.error('Snack creation failed:', snackError);
-        // Continue without Snack - will show fallback preview
+        // Fallback if Snack fails
+        const SimplePreview = () => {
+          return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#667eea' }}>
+              <StatusBar barStyle="light-content" />
+              <LinearGradient
+                colors={['#667eea', '#764ba2']}
+                style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 32, fontWeight: '900', color: '#ffffff', textAlign: 'center', marginBottom: 20 }}>
+                  App {isModification ? 'Updated' : 'Generated'}!
+                </Text>
+                <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', textAlign: 'center', marginBottom: 40 }}>
+                  Your app code has been {isModification ? 'updated with your changes' : 'generated successfully'}.
+                </Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 24, width: '100%' }}>
+                  <Text style={{ fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
+                    Generated Component: GeneratedApp
+                  </Text>
+                  <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
+                    Lines of code: {code.split('\n').length}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: '#64748b' }}>
+                    Ready to export and run!
+                  </Text>
+                </View>
+              </LinearGradient>
+            </SafeAreaView>
+          );
+        };
+        
+        setGeneratedComponent(() => SimplePreview);
         setSnackUrl(null);
       } finally {
         setIsCreatingSnack(false);
       }
-
-      // For fallback if Snack fails, show a simple success message
-      const SimplePreview = () => {
-        return (
-          <SafeAreaView style={{ flex: 1, backgroundColor: '#667eea' }}>
-            <StatusBar barStyle="light-content" />
-            <LinearGradient
-              colors={['#667eea', '#764ba2']}
-              style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}
-            >
-              <Text style={{ fontSize: 32, fontWeight: '900', color: '#ffffff', textAlign: 'center', marginBottom: 20 }}>
-                App {isModification ? 'Updated' : 'Generated'}!
-              </Text>
-              <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', textAlign: 'center', marginBottom: 40 }}>
-                Your app code has been {isModification ? 'updated with your changes' : 'generated successfully'}.
-              </Text>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 24, width: '100%' }}>
-                <Text style={{ fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
-                  Generated Component: GeneratedApp
-                </Text>
-                <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
-                  Lines of code: {code.split('\n').length}
-                </Text>
-                <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
-                  Conversation turns: {Math.floor(conversationHistory.length / 2) + 1}
-                </Text>
-                <Text style={{ fontSize: 14, color: '#64748b' }}>
-                  Ready to export and run!
-                </Text>
-              </View>
-            </LinearGradient>
-          </SafeAreaView>
-        );
-      };
-
-      setGeneratedComponent(() => SimplePreview);
+      
       setIsModifying(false);
       setShowPreview(true);
     } catch (err) {

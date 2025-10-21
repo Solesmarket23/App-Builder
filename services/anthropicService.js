@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { ANTHROPIC_API_KEY } from '@env';
 
 // Set to true to use mock data instead of real API calls (for testing)
-const USE_MOCK_MODE = true;
+const USE_MOCK_MODE = false;
 
 const anthropic = new Anthropic({
   apiKey: ANTHROPIC_API_KEY,
