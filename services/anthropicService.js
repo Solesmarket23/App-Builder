@@ -138,6 +138,19 @@ async function getMockResponse(appIdea) {
 function validateCode(code) {
   const errors = [];
 
+  // Check for duplicate variable declarations
+  const constDeclarations = code.match(/const\s+([A-Z_][A-Z0-9_]*)\s*=/g);
+  if (constDeclarations) {
+    const declaredVars = {};
+    constDeclarations.forEach(declaration => {
+      const varName = declaration.match(/const\s+([A-Z_][A-Z0-9_]*)/)[1];
+      if (declaredVars[varName]) {
+        errors.push({ type: 'CRITICAL', message: `Duplicate declaration: ${varName} is declared multiple times` });
+      }
+      declaredVars[varName] = true;
+    });
+  }
+
   // Critical errors (must fix)
   if (!code.includes('SafeAreaView')) {
     errors.push({ type: 'CRITICAL', message: 'Missing SafeAreaView wrapper' });
@@ -549,6 +562,23 @@ The user should be able to copy this code directly into Expo Snack and have it w
     
     // Trim whitespace
     generatedCode = generatedCode.trim();
+    
+    // Remove duplicate const declarations (common Claude error)
+    const lines = generatedCode.split('\n');
+    const seenConsts = new Set();
+    const dedupedLines = lines.filter(line => {
+      const constMatch = line.match(/^\s*const\s+([A-Z_][A-Z0-9_]*)\s*=/);
+      if (constMatch) {
+        const varName = constMatch[1];
+        if (seenConsts.has(varName)) {
+          console.log(`🔧 Removed duplicate declaration: ${varName}`);
+          return false; // Remove this line
+        }
+        seenConsts.add(varName);
+      }
+      return true;
+    });
+    generatedCode = dedupedLines.join('\n');
     
     // Final check: remove any stray backticks that aren't part of template literals
     // Template literals should be in the format: `text ${variable} text`
