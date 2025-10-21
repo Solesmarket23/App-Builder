@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 /**
  * Generates React Native component code based on user's app idea
  * @param {string} appIdea - User's description of the app they want to build
- * @returns {Promise<{code: string, componentName: string}>} - Generated component code and name
+ * @returns {Promise<{code: string, componentName: string, usage: object, cost: object}>} - Generated component code, name, token usage, and cost
  */
 export async function generateAppCode(appIdea) {
   try {
@@ -49,9 +49,28 @@ Generate the complete component code now:`;
     // Remove markdown code blocks if present
     generatedCode = generatedCode.replace(/```jsx?\n?/g, '').replace(/```\n?$/g, '');
 
+    // Calculate costs (Claude Sonnet 4 pricing as of 2025)
+    // Input: $3 per million tokens
+    // Output: $15 per million tokens
+    const inputTokens = message.usage.input_tokens;
+    const outputTokens = message.usage.output_tokens;
+    const inputCost = (inputTokens / 1000000) * 3;
+    const outputCost = (outputTokens / 1000000) * 15;
+    const totalCost = inputCost + outputCost;
+
     return {
       code: generatedCode,
       componentName: 'GeneratedApp',
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens,
+      },
+      cost: {
+        input_cost: inputCost,
+        output_cost: outputCost,
+        total_cost: totalCost,
+      },
     };
   } catch (error) {
     console.error('Error generating app code:', error);

@@ -31,6 +31,7 @@ export default function App() {
   const [generatedCode, setGeneratedCode] = useState(null);
   const [GeneratedComponent, setGeneratedComponent] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [usageStats, setUsageStats] = useState(null);
 
   // Example ideas to help users get started
   const exampleIdeas = [
@@ -56,8 +57,9 @@ export default function App() {
 
     try {
       // Generate React Native code using Anthropic AI
-      const { code } = await generateAppCode(idea);
+      const { code, usage, cost } = await generateAppCode(idea);
       setGeneratedCode(code);
+      setUsageStats({ usage, cost });
 
       // Dynamically create the component from the generated code
       // This uses eval to execute the generated code and create a component
@@ -173,6 +175,7 @@ export default function App() {
         onBack={handleBack}
         onExport={handleExport}
         isDarkMode={isDarkMode}
+        usageStats={usageStats}
       />
     );
   }

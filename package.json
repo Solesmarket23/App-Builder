@@ -19,5 +19,9 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-web": "^0.21.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "babel-preset-expo": "^54.0.5"
+  }
 }
