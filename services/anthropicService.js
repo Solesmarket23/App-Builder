@@ -138,6 +138,32 @@ async function getMockResponse(appIdea) {
 function validateCode(code) {
   const errors = [];
 
+  // Check for basic syntax issues
+  const lines = code.split('\n');
+  lines.forEach((line, index) => {
+    // Check for missing semicolons after simple statements
+    const trimmed = line.trim();
+    if (trimmed && 
+        !trimmed.endsWith(';') && 
+        !trimmed.endsWith('{') && 
+        !trimmed.endsWith('}') &&
+        !trimmed.endsWith(',') &&
+        !trimmed.startsWith('//') &&
+        !trimmed.startsWith('/*') &&
+        !trimmed.startsWith('*') &&
+        !trimmed.startsWith('import ') &&
+        !trimmed.startsWith('export ') &&
+        !trimmed.match(/^(if|else|for|while|function|const|let|var|return)/)) {
+      // Likely JSX or continuation, skip
+      if (!trimmed.startsWith('<') && !trimmed.startsWith('>') && !trimmed.match(/^\)/)) {
+        // Check if it looks like a statement that needs semicolon
+        if (trimmed.includes('=') || trimmed.match(/\)\s*$/)) {
+          errors.push({ type: 'CRITICAL', message: `Line ${index + 1}: Possible missing semicolon` });
+        }
+      }
+    }
+  });
+
   // Critical errors (must fix)
   if (!code.includes('SafeAreaView')) {
     errors.push({ type: 'CRITICAL', message: 'Missing SafeAreaView wrapper' });
@@ -353,6 +379,7 @@ const [text, setText] = useState("");
 \`\`\`
 
 MANDATORY CHECKLIST (Verify before outputting):
+✓ ALL syntax is valid JavaScript (no missing semicolons, commas, or brackets)
 ✓ SafeAreaView imported from 'react-native-safe-area-context' (NOT react-native)
 ✓ SafeAreaView wraps all content with edges prop
 ✓ StatusBar is included
@@ -365,6 +392,7 @@ MANDATORY CHECKLIST (Verify before outputting):
 ✓ No undefined property access without checks
 ✓ iOS HIG spacing (min 16px padding, 44pt touch targets)
 ✓ Double quotes used consistently
+✓ Code passes ESLint validation (proper semicolons, commas, brackets)
 
 STRUCTURE:
 - Put ALL code in a single component named 'GeneratedApp'
