@@ -495,8 +495,37 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Extract the code from the response
     let generatedCode = message.content[0].text;
 
-    // Remove markdown code blocks if present
-    generatedCode = generatedCode.replace(/```jsx?\n?/g, '').replace(/```\n?$/g, '');
+    // Clean up the response - remove markdown, explanations, etc.
+    // Remove markdown code blocks (```jsx, ```javascript, ```)
+    generatedCode = generatedCode.replace(/```(?:jsx?|javascript|typescript|ts)?\n?/gi, '');
+    generatedCode = generatedCode.replace(/```\n?$/g, '');
+    
+    // Remove any explanatory text before the first import
+    const firstImportIndex = generatedCode.indexOf('import ');
+    if (firstImportIndex > 0) {
+      generatedCode = generatedCode.substring(firstImportIndex);
+    }
+    
+    // Remove any text after the last export/closing brace
+    const lines = generatedCode.split('\n');
+    let lastCodeLine = lines.length - 1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (line && !line.startsWith('//') && !line.startsWith('*')) {
+        lastCodeLine = i;
+        break;
+      }
+    }
+    generatedCode = lines.slice(0, lastCodeLine + 1).join('\n');
+    
+    // Trim whitespace
+    generatedCode = generatedCode.trim();
+    
+    // Validate the code starts correctly
+    if (!generatedCode.startsWith('import ') && !generatedCode.startsWith('// ') && !generatedCode.startsWith('/*')) {
+      console.error('Code does not start with valid syntax:', generatedCode.substring(0, 100));
+      throw new Error('Generated code has invalid syntax at the beginning. Please try again.');
+    }
 
     // Progress: Validating
     if (onProgress) onProgress('Checking for issues...', true);
