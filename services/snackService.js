@@ -63,27 +63,3 @@ export function getEmbedUrl(snackId, options = {}) {
 
   return `https://snack.expo.dev/embedded/@snack/${snackId}?${params.toString()}`;
 }
-
-
-/**
- * Gets the embed URL for a Snack (optimized for WebView)
- * @param {string} snackId - Snack ID
- * @param {Object} options - Embed options
- * @returns {string} - Embed URL
- */
-export function getEmbedUrl(snackId, options = {}) {
-  const {
-    platform = 'ios',
-    preview = true,
-    theme = 'dark',
-  } = options;
-
-  const params = new URLSearchParams({
-    platform,
-    preview: preview ? 'true' : 'false',
-    theme,
-  });
-
-  return `https://snack.expo.dev/embedded/${snackId}?${params.toString()}`;
-}
-
