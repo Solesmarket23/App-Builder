@@ -177,27 +177,32 @@ export default function LoadingScreen({ isDarkMode, userMessage, progressMessage
       console.log('📱 UI Progress Update:', progressMessage, 'isThinking:', isThinking);
       previousProgressRef.current = progressMessage;
       
-      // Remove any existing "thinking" messages
-      setMessages((prev) => prev.filter(msg => msg.role !== 'thinking'));
-      
-      if (isThinking) {
-        // Add thinking indicator
-        setMessages((prev) => [
-          ...prev,
-          { role: 'thinking', text: 'processing', id: Date.now() }
-        ]);
-      } else {
-        // Add AI message
-        setMessages((prev) => [
-          ...prev,
+      // Always show the progress message as an AI message
+      setMessages((prev) => {
+        // Remove any existing "thinking" messages
+        const filtered = prev.filter(msg => msg.role !== 'thinking');
+        
+        // Add the progress message
+        return [
+          ...filtered,
           { role: 'ai', text: progressMessage, id: Date.now() }
-        ]);
+        ];
+      });
+      
+      // If thinking, add the thinking indicator AFTER the message
+      if (isThinking) {
+        setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'thinking', text: 'processing', id: Date.now() + 1 }
+          ]);
+        }, 100);
       }
       
       // Auto-scroll to bottom
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 200);
     }
   }, [progressMessage, isThinking]);
 

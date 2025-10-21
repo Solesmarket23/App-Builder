@@ -567,6 +567,21 @@ The user should be able to copy this code directly into Expo Snack and have it w
       console.error('Code does not start with valid syntax:', generatedCode.substring(0, 100));
       throw new Error('Generated code has invalid syntax at the beginning. Please try again.');
     }
+    
+    // Try to detect basic syntax errors by checking for common issues
+    const syntaxChecks = [
+      { pattern: /\(\s*\)/, message: 'Found empty parentheses' },
+      { pattern: /\{\s*,/, message: 'Found comma after opening brace' },
+      { pattern: /,\s*\}/, message: 'Found trailing comma before closing brace' },
+      { pattern: /,\s*\]/, message: 'Found trailing comma before closing bracket' },
+      { pattern: /\[\s*,/, message: 'Found comma after opening bracket' },
+    ];
+    
+    syntaxChecks.forEach(check => {
+      if (check.pattern.test(generatedCode)) {
+        console.warn(`⚠️ Potential syntax issue: ${check.message}`);
+      }
+    });
 
     // Progress: Validating
     if (onProgress) onProgress('Checking for issues...', true);
