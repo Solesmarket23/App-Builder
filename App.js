@@ -17,9 +17,15 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ExpoVectorIcons from '@expo/vector-icons';
+const Ionicons = ExpoVectorIcons.Ionicons;
+const MaterialIcons = ExpoVectorIcons.MaterialIcons;
+const Feather = ExpoVectorIcons.Feather;
 import { generateAppCode } from './services/anthropicService';
+import { createSnack } from './services/snackService';
 import PreviewScreen from './components/PreviewScreen';
 import LoadingScreen from './components/LoadingScreen';
+import ConversationScreen from './components/ConversationScreen';
+import ChatScreen from './components/ChatScreen';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +43,11 @@ export default function App() {
   const [showPreview, setShowPreview] = useState(false);
   const [usageStats, setUsageStats] = useState(null);
   const [conversationHistory, setConversationHistory] = useState([]);
+  const [isModifying, setIsModifying] = useState(false);
+  const [modificationRequest, setModificationRequest] = useState('');
+  const [showChatView, setShowChatView] = useState(false);
+  const [snackUrl, setSnackUrl] = useState(null);
+  const [isCreatingSnack, setIsCreatingSnack] = useState(false);
 
   // Example ideas to help users get started
   const exampleIdeas = [
@@ -52,14 +63,39 @@ export default function App() {
    */
   const handleReturnToConversation = () => {
     setShowPreview(false);
+    setShowChatView(true);
     setIdea(''); // Clear input for new modification
+  };
+
+  /**
+   * Starts a new app conversation
+   */
+  const handleStartNew = () => {
+    setConversationHistory([]);
+    setGeneratedCode(null);
+    setGeneratedComponent(null);
+    setShowPreview(false);
+    setShowChatView(false);
+    setIdea('');
+    setError('');
+  };
+
+  /**
+   * Views the preview from chat
+   */
+  const handleViewPreviewFromChat = () => {
+    if (GeneratedComponent) {
+      setShowChatView(false);
+      setShowPreview(true);
+    }
   };
 
   /**
    * Handles the generation of the app based on user input
    */
-  const generateApp = async (modificationRequest = null) => {
-    const userMessage = modificationRequest || idea;
+  const generateApp = async (modificationReq = null) => {
+    const userMessage = modificationReq || idea;
+    const isModification = modificationReq !== null;
     
     if (!userMessage.trim()) {
       setError('Please enter an app idea');
@@ -69,13 +105,20 @@ export default function App() {
     setIsGenerating(true);
     setError('');
     setShowPreview(false);
+    
+    // Set modification state and request
+    if (isModification) {
+      setIsModifying(true);
+      setModificationRequest(userMessage);
+    } else {
+      setIsModifying(false);
+    }
 
     try {
       // Build conversation history for follow-ups
-      const isFollowUp = modificationRequest !== null;
       let messages = [];
       
-      if (isFollowUp) {
+      if (isModification) {
         // Include previous conversation for context
         messages = [...conversationHistory, { role: 'user', content: userMessage }];
       } else {
@@ -90,14 +133,28 @@ export default function App() {
       setUsageStats({ usage, cost });
 
       // Update conversation history with assistant's response
-      if (isFollowUp) {
+      if (isModification) {
         setConversationHistory([...messages, { role: 'assistant', content: code }]);
       } else {
         setConversationHistory([...messages, { role: 'assistant', content: code }]);
       }
 
-      // For now, show a simple success message
-      // TODO: Implement proper JSX dynamic rendering (requires babel transform)
+      // Create Expo Snack for live preview
+      setIsCreatingSnack(true);
+      try {
+        const appName = `AI Generated: ${userMessage.substring(0, 30)}${userMessage.length > 30 ? '...' : ''}`;
+        const snack = await createSnack(code, appName);
+        setSnackUrl(snack.embedUrl);
+        console.log('✅ Snack created:', snack.url);
+      } catch (snackError) {
+        console.error('Snack creation failed:', snackError);
+        // Continue without Snack - will show fallback preview
+        setSnackUrl(null);
+      } finally {
+        setIsCreatingSnack(false);
+      }
+
+      // For fallback if Snack fails, show a simple success message
       const SimplePreview = () => {
         return (
           <SafeAreaView style={{ flex: 1, backgroundColor: '#667eea' }}>
@@ -107,23 +164,23 @@ export default function App() {
               style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}
             >
               <Text style={{ fontSize: 32, fontWeight: '900', color: '#ffffff', textAlign: 'center', marginBottom: 20 }}>
-                ✨ App {isFollowUp ? 'Updated' : 'Generated'}!
+                App {isModification ? 'Updated' : 'Generated'}!
               </Text>
               <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.9)', textAlign: 'center', marginBottom: 40 }}>
-                Your app code has been {isFollowUp ? 'updated with your changes' : 'generated successfully'}.
+                Your app code has been {isModification ? 'updated with your changes' : 'generated successfully'}.
               </Text>
               <View style={{ backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 24, width: '100%' }}>
                 <Text style={{ fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
-                  📦 Generated Component: GeneratedApp
+                  Generated Component: GeneratedApp
                 </Text>
                 <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
-                  📝 Lines of code: {code.split('\n').length}
+                  Lines of code: {code.split('\n').length}
                 </Text>
                 <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 12 }}>
-                  💬 Conversation turns: {Math.floor(conversationHistory.length / 2) + 1}
+                  Conversation turns: {Math.floor(conversationHistory.length / 2) + 1}
                 </Text>
                 <Text style={{ fontSize: 14, color: '#64748b' }}>
-                  ⚡ Ready to export and run!
+                  Ready to export and run!
                 </Text>
               </View>
             </LinearGradient>
@@ -132,10 +189,12 @@ export default function App() {
       };
 
       setGeneratedComponent(() => SimplePreview);
+      setIsModifying(false);
       setShowPreview(true);
     } catch (err) {
       console.error('Generation error:', err);
       setError(err.message || 'Generation failed. Please try again.');
+      setIsModifying(false);
     } finally {
       setIsGenerating(false);
     }
@@ -208,9 +267,28 @@ export default function App() {
     chipText: isDarkMode ? '#e2e8f0' : '#1f2937',
   };
 
-  // Show loading screen during generation
+  // Show conversation screen during modification
+  if (isGenerating && isModifying) {
+    return <ConversationScreen isDarkMode={isDarkMode} userRequest={modificationRequest} />;
+  }
+
+  // Show loading screen during initial generation
   if (isGenerating) {
-    return <LoadingScreen isDarkMode={isDarkMode} />;
+    return <LoadingScreen isDarkMode={isDarkMode} userMessage={idea} />;
+  }
+
+  // Show chat view when user returns from preview or has conversation history
+  if (showChatView || (conversationHistory.length > 0 && !showPreview)) {
+    return (
+      <ChatScreen
+        conversationHistory={conversationHistory}
+        onSendMessage={generateApp}
+        onViewPreview={handleViewPreviewFromChat}
+        onStartNew={handleStartNew}
+        isDarkMode={isDarkMode}
+        hasGeneratedApp={!!GeneratedComponent}
+      />
+    );
   }
 
   // Show preview screen if app was generated
@@ -218,11 +296,14 @@ export default function App() {
     return (
       <PreviewScreen
         GeneratedComponent={GeneratedComponent}
-        onBack={handleBack}
+        onBack={handleStartNew}
         onExport={handleExport}
         onReturnToConversation={handleReturnToConversation}
         isDarkMode={isDarkMode}
         usageStats={usageStats}
+        snackUrl={snackUrl}
+        isCreatingSnack={isCreatingSnack}
+        generatedCode={generatedCode}
       />
     );
   }
@@ -253,7 +334,11 @@ export default function App() {
             ]}
             activeOpacity={0.7}
           >
-            <Text style={styles.themeIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
+            <Ionicons 
+              name={isDarkMode ? 'sunny' : 'moon'} 
+              size={20} 
+              color={isDarkMode ? '#fbbf24' : '#6366f1'} 
+            />
           </TouchableOpacity>
 
           {/* Header Section */}
@@ -265,7 +350,8 @@ export default function App() {
               end={{ x: 1, y: 0 }}
               style={styles.badge}
             >
-              <Text style={styles.badgeText}>⭐ AI-POWERED APP GENERATION</Text>
+              <MaterialIcons name="auto-awesome" size={14} color="#ffffff" />
+              <Text style={styles.badgeText}>AI-POWERED APP GENERATION</Text>
             </LinearGradient>
 
             {/* Title */}
@@ -287,9 +373,12 @@ export default function App() {
           {conversationHistory.length > 0 && (
             <View style={[styles.conversationContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
               <View style={styles.conversationHeader}>
-                <Text style={[styles.conversationTitle, { color: colors.text }]}>
-                  💬 Conversation History
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="chatbubbles" size={16} color={colors.text} style={{ marginRight: 6 }} />
+                  <Text style={[styles.conversationTitle, { color: colors.text }]}>
+                    Conversation History
+                  </Text>
+                </View>
                 <Text style={[styles.conversationCount, { color: colors.textMuted }]}>
                   {Math.floor(conversationHistory.length / 2) + 1} {Math.floor(conversationHistory.length / 2) + 1 === 1 ? 'iteration' : 'iterations'}
                 </Text>
@@ -299,7 +388,10 @@ export default function App() {
                   msg.role === 'user' && (
                     <View key={index} style={styles.conversationMessage}>
                       <View style={styles.messageHeader}>
-                        <Text style={styles.messageRole}>👤 You</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Feather name="user" size={12} color="#6366f1" style={{ marginRight: 4 }} />
+                          <Text style={styles.messageRole}>You</Text>
+                        </View>
                         <Text style={[styles.messageIndex, { color: colors.textMuted }]}>
                           #{Math.floor(index / 2) + 1}
                         </Text>
@@ -330,7 +422,7 @@ export default function App() {
                 colors={['#3b82f6', '#06b6d4']}
                 style={styles.cardIcon}
               >
-                <Text style={styles.cardIconText}>✨</Text>
+                <Ionicons name="bulb" size={20} color="#ffffff" />
               </LinearGradient>
               <Text style={[styles.cardTitle, { color: colors.text }]}>
                 {conversationHistory.length > 0 ? 'Modify Your App' : 'Your Vision'}
@@ -393,7 +485,7 @@ export default function App() {
 
             {/* Generate Button */}
             <TouchableOpacity
-              onPress={generateApp}
+              onPress={() => generateApp()}
               disabled={isGenerating || !idea.trim()}
               activeOpacity={0.8}
             >
@@ -406,7 +498,12 @@ export default function App() {
                   (isGenerating || !idea.trim()) && styles.buttonDisabled,
                 ]}
               >
-                <Text style={styles.generateButtonText}>⚡</Text>
+                <Ionicons 
+                  name={conversationHistory.length > 0 ? "refresh" : "flash"} 
+                  size={20} 
+                  color="#ffffff" 
+                  style={{ marginRight: 8 }}
+                />
                 <Text style={styles.generateButtonText}>
                   {isGenerating 
                     ? (conversationHistory.length > 0 ? 'Updating...' : 'Generating...') 
@@ -477,15 +574,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  themeIcon: {
-    fontSize: 28,
-  },
   header: {
     alignItems: 'center',
     marginBottom: 48,
     marginTop: 40,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
@@ -538,9 +635,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
-  cardIconText: {
-    fontSize: 28,
   },
   cardTitle: {
     fontSize: 28,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,27 @@ import {
   Dimensions,
   ScrollView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 
 const { width, height } = Dimensions.get('window');
 
 /**
- * PreviewScreen - Displays the generated app in a phone frame
+ * PreviewScreen - Displays the generated app in a phone frame with live Expo Snack preview
  * @param {Object} props
- * @param {React.Component} props.GeneratedComponent - The dynamically generated component
+ * @param {React.Component} props.GeneratedComponent - The dynamically generated component (fallback)
  * @param {Function} props.onBack - Callback to return to the main screen
  * @param {Function} props.onExport - Callback to export the generated app
  * @param {Function} props.onReturnToConversation - Callback to return to conversation for modifications
  * @param {boolean} props.isDarkMode - Current theme mode
  * @param {Object} props.usageStats - Token usage and cost statistics
+ * @param {string} props.snackUrl - Expo Snack embed URL for live preview
+ * @param {boolean} props.isCreatingSnack - Whether Snack is being created
+ * @param {string} props.generatedCode - The generated code
  */
 export default function PreviewScreen({
   GeneratedComponent,
@@ -31,7 +37,11 @@ export default function PreviewScreen({
   onReturnToConversation,
   isDarkMode,
   usageStats,
+  snackUrl,
+  isCreatingSnack,
+  generatedCode,
 }) {
+  const [webViewLoading, setWebViewLoading] = useState(true);
   const colors = {
     background: isDarkMode
       ? ['#020617', '#0f172a', '#020617']
@@ -90,15 +100,44 @@ export default function PreviewScreen({
             {/* Phone Notch */}
             <View style={styles.notch} />
 
-            {/* Generated App Container */}
+            {/* Generated App Container - Live Snack Preview or Fallback */}
             <View style={styles.appContainer}>
-              <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {GeneratedComponent ? <GeneratedComponent /> : null}
-              </ScrollView>
+              {isCreatingSnack ? (
+                // Loading state while creating Snack
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#667eea" />
+                  <Text style={[styles.loadingText, { color: colors.text }]}>
+                    Creating live preview...
+                  </Text>
+                </View>
+              ) : snackUrl ? (
+                // Live Snack WebView
+                <View style={styles.webViewContainer}>
+                  {webViewLoading && (
+                    <View style={styles.webViewLoading}>
+                      <ActivityIndicator size="large" color="#667eea" />
+                    </View>
+                  )}
+                  <WebView
+                    source={{ uri: snackUrl }}
+                    style={styles.webView}
+                    onLoadStart={() => setWebViewLoading(true)}
+                    onLoadEnd={() => setWebViewLoading(false)}
+                    javaScriptEnabled={true}
+                    domStorageEnabled={true}
+                    startInLoadingState={true}
+                  />
+                </View>
+              ) : (
+                // Fallback to static preview
+                <ScrollView
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <GeneratedComponent />
+                </ScrollView>
+              )}
             </View>
 
             {/* Phone Home Indicator */}
@@ -155,9 +194,12 @@ export default function PreviewScreen({
 
             {usageStats.usage.cache_creation_tokens > 0 && (
               <View style={styles.statsRow}>
-                <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
-                  📦 Cache Created:
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialIcons name="inventory" size={14} color="#f59e0b" style={{ marginRight: 4 }} />
+                  <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+                    Cache Created:
+                  </Text>
+                </View>
                 <Text style={[styles.statsValue, { color: '#f59e0b' }]}>
                   {usageStats.usage.cache_creation_tokens.toLocaleString()} tokens
                 </Text>
@@ -166,9 +208,12 @@ export default function PreviewScreen({
 
             {usageStats.usage.cache_read_tokens > 0 && (
               <View style={styles.statsRow}>
-                <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
-                  💰 Cache Hit:
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialIcons name="savings" size={14} color="#10b981" style={{ marginRight: 4 }} />
+                  <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+                    Cache Hit:
+                  </Text>
+                </View>
                 <Text style={[styles.statsValue, { color: '#10b981' }]}>
                   {usageStats.usage.cache_read_tokens.toLocaleString()} tokens (saved ${usageStats.cost.cache_savings?.toFixed(4) || '0.0000'})
                 </Text>
@@ -211,9 +256,12 @@ export default function PreviewScreen({
               </LinearGradient>
             </View>
 
-            <Text style={[styles.pricingNote, { color: colors.textMuted }]}>
-              💡 Pricing: $3/M input tokens, $15/M output tokens
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="information-circle-outline" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
+              <Text style={[styles.pricingNote, { color: colors.textMuted }]}>
+                Pricing: $3/M input tokens, $15/M output tokens
+              </Text>
+            </View>
           </View>
         )}
       </LinearGradient>
@@ -230,7 +278,7 @@ export default function PreviewScreen({
           end={{ x: 1, y: 1 }}
           style={styles.floatingButtonGradient}
         >
-          <Text style={styles.floatingButtonIcon}>💬</Text>
+          <Ionicons name="chatbubbles" size={26} color="#ffffff" />
         </LinearGradient>
       </TouchableOpacity>
     </SafeAreaView>
@@ -413,8 +461,35 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  floatingButtonIcon: {
-    fontSize: 28,
+  webViewContainer: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  webView: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  webViewLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    zIndex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

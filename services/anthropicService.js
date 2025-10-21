@@ -14,8 +14,8 @@ const anthropic = new Anthropic({
  * @returns {Promise<Object>} - Mock response matching Anthropic API format
  */
 async function getMockResponse(appIdea) {
-  // Simulate API delay (3-5 seconds)
-  await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
+  // Simulate API delay (15-18 seconds to match loading animation)
+  await new Promise(resolve => setTimeout(resolve, 15000 + Math.random() * 3000));
 
   // Using string concatenation to avoid template literal issues
   const mockCode = 

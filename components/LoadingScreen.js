@@ -3,113 +3,62 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
+  Platform,
   Animated,
   ScrollView,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
-
-/**
- * LoadingScreen - Shows conversational AI messages during app generation
- * @param {Object} props
- * @param {boolean} props.isDarkMode - Current theme mode
- */
-export default function LoadingScreen({ isDarkMode }) {
-  const [messages, setMessages] = React.useState([]);
-  const scrollViewRef = React.useRef(null);
-
-  const conversationFlow = [
-    { role: 'ai', text: '👋 Hi! I\'m analyzing your app idea...', delay: 500 },
-    { role: 'ai', text: '💡 Great concept! Let me start by planning the UI components.', delay: 3000 },
-    { role: 'ai', text: '🎨 Choosing a beautiful color palette that matches your vision...', delay: 6000 },
-    { role: 'user', text: 'How\'s it looking?', delay: 10000 },
-    { role: 'ai', text: '✨ Looking good! Creating the component structure now.', delay: 12000 },
-    { role: 'ai', text: '⚛️ Writing React hooks for state management...', delay: 18000 },
-    { role: 'ai', text: '🔧 Building interactive elements - buttons, inputs, navigation...', delay: 25000 },
-    { role: 'user', text: 'Will it be responsive?', delay: 32000 },
-    { role: 'ai', text: '✅ Absolutely! Adding responsive styling now.', delay: 34000 },
-    { role: 'ai', text: '🎭 Adding smooth animations and transitions...', delay: 42000 },
-    { role: 'ai', text: '📱 Optimizing for iOS and making sure everything works perfectly...', delay: 52000 },
-    { role: 'ai', text: '🔍 Running final checks and validations...', delay: 62000 },
-    { role: 'ai', text: '🎉 Almost done! Finalizing your app...', delay: 72000 },
-  ];
+// Memoized ThinkingIndicator to prevent re-renders
+const ThinkingIndicator = React.memo(({ text, colors }) => {
+  const dots = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
-    const timers = [];
-
-    conversationFlow.forEach((msg, index) => {
-      const timer = setTimeout(() => {
-        setMessages(prev => [...prev, { ...msg, id: index }]);
-        // Auto-scroll to bottom
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }, msg.delay);
-      timers.push(timer);
-    });
-
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(dots, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dots, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
-  const colors = {
-    background: isDarkMode
-      ? ['#020617', '#0f172a', '#020617']
-      : ['#f9fafb', '#dbeafe', '#f9fafb'],
-    aiMessageBg: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
-    userMessageBg: isDarkMode ? 'rgba(71, 85, 105, 0.5)' : 'rgba(226, 232, 240, 0.8)',
-    aiText: isDarkMode ? '#e0e7ff' : '#1e40af',
-    userText: isDarkMode ? '#cbd5e1' : '#475569',
-    headerText: isDarkMode ? '#ffffff' : '#111827',
-    subtitleText: isDarkMode ? '#94a3b8' : '#64748b',
-  };
-
   return (
-    <LinearGradient colors={colors.background} style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.aiAvatarContainer}>
-          <LinearGradient
-            colors={['#3b82f6', '#06b6d4']}
-            style={styles.aiAvatar}
-          >
-            <Text style={styles.aiAvatarText}>AI</Text>
-          </LinearGradient>
-        </View>
-        <View style={styles.headerTextContainer}>
-          <Text style={[styles.headerTitle, { color: colors.headerText }]}>
-            Building Your App
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>
-            ⏱ This usually takes 60-90 seconds
-          </Text>
-        </View>
-      </View>
-
-      {/* Conversation */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.conversationContainer}
-        contentContainerStyle={styles.conversationContent}
-        showsVerticalScrollIndicator={false}
+    <View style={styles.thinkingContainer}>
+      <LinearGradient
+        colors={colors.thinkingGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.thinkingBubble}
       >
-        {messages.map((message) => (
-          <ConversationMessage
-            key={message.id}
-            message={message}
-            colors={colors}
-            isDarkMode={isDarkMode}
-          />
-        ))}
-      </ScrollView>
-    </LinearGradient>
+        <View style={styles.thinkingContent}>
+          <View style={styles.thinkingIcon}>
+            <MaterialIcons name="sync" size={14} color="rgba(255,255,255,0.8)" />
+          </View>
+          <Text style={styles.thinkingText}>{text}</Text>
+        </View>
+        <View style={styles.dotsContainer}>
+          <Animated.View style={[styles.dot, { opacity: dots }]} />
+          <Animated.View style={[styles.dot, { opacity: dots }]} />
+          <Animated.View style={[styles.dot, { opacity: dots }]} />
+        </View>
+      </LinearGradient>
+    </View>
   );
-}
+});
 
-function ConversationMessage({ message, colors, isDarkMode }) {
+// Memoized MessageBubble to prevent re-renders
+const MessageBubble = React.memo(({ message, colors }) => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
@@ -117,65 +66,173 @@ function ConversationMessage({ message, colors, isDarkMode }) {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-  const isAI = message.role === 'ai';
+  if (message.role === 'thinking') {
+    return (
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        <ThinkingIndicator text={message.text} colors={colors} />
+      </Animated.View>
+    );
+  }
+
+  const isUser = message.role === 'user';
 
   return (
     <Animated.View
       style={[
-        styles.messageContainer,
-        isAI ? styles.aiMessageContainer : styles.userMessageContainer,
+        styles.messageBubbleContainer,
         {
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
+          alignItems: isUser ? 'flex-end' : 'flex-start',
         },
       ]}
     >
-      {isAI && (
-        <View style={styles.smallAvatarContainer}>
-          <LinearGradient
-            colors={['#3b82f6', '#06b6d4']}
-            style={styles.smallAvatar}
-          >
-            <Text style={styles.smallAvatarText}>AI</Text>
-          </LinearGradient>
-        </View>
-      )}
-      <View
-        style={[
-          styles.messageBubble,
-          {
-            backgroundColor: isAI ? colors.aiMessageBg : colors.userMessageBg,
-          },
-        ]}
-      >
-        <Text
+      {isUser ? (
+        <LinearGradient
+          colors={colors.userBubble}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={[
-            styles.messageText,
-            { color: isAI ? colors.aiText : colors.userText },
+            styles.messageBubble,
+            {
+              borderTopRightRadius: 4,
+              borderTopLeftRadius: 18,
+            },
           ]}
         >
-          {message.text}
-        </Text>
-      </View>
-      {!isAI && (
-        <View style={styles.userAvatarContainer}>
-          <View style={styles.userAvatar}>
-            <Text style={styles.userAvatarText}>You</Text>
-          </View>
+          <Text style={[styles.messageText, { color: colors.userText }]}>
+            {message.text}
+          </Text>
+        </LinearGradient>
+      ) : (
+        <View
+          style={[
+            styles.messageBubble,
+            {
+              backgroundColor: colors.aiBubble,
+              borderTopRightRadius: 18,
+              borderTopLeftRadius: 4,
+            },
+          ]}
+        >
+          <Text style={[styles.messageText, { color: colors.aiText }]}>
+            {message.text}
+          </Text>
         </View>
       )}
     </Animated.View>
+  );
+});
+
+/**
+ * LoadingScreen - Shows AI thinking process as chat messages
+ * @param {Object} props
+ * @param {boolean} props.isDarkMode - Current theme mode
+ * @param {string} props.userMessage - The user's app idea
+ */
+export default function LoadingScreen({ isDarkMode, userMessage }) {
+  const [messages, setMessages] = React.useState([]);
+  const scrollViewRef = React.useRef(null);
+
+  const colors = React.useMemo(() => ({
+    background: isDarkMode ? '#000000' : '#ffffff',
+    userBubble: ['#667eea', '#764ba2'],
+    aiBubble: isDarkMode ? '#2c2c2e' : '#e5e5ea',
+    thinkingGradient: ['#667eea', '#764ba2'],
+    userText: '#ffffff',
+    aiText: isDarkMode ? '#ffffff' : '#000000',
+    text: isDarkMode ? '#ffffff' : '#000000',
+    headerBg: isDarkMode ? '#1c1c1e' : '#f9f9f9',
+  }), [isDarkMode]);
+
+  React.useEffect(() => {
+    // Futuristic AI thinking messages - spread over 15 seconds
+    const thinkingFlow = [
+      { role: 'user', text: userMessage, delay: 0 },
+      { role: 'thinking', text: 'analyzing-request', delay: 800 },
+      { role: 'ai', text: 'Request received. Initializing app generation...', delay: 2000 },
+      { role: 'thinking', text: 'building-component-structure', delay: 3500 },
+      { role: 'ai', text: 'Component architecture mapped', delay: 5000 },
+      { role: 'thinking', text: 'designing-ui-layout', delay: 6500 },
+      { role: 'ai', text: 'UI layout optimized for iOS', delay: 8000 },
+      { role: 'thinking', text: 'implementing-state-management', delay: 9500 },
+      { role: 'ai', text: 'State hooks configured', delay: 11000 },
+      { role: 'thinking', text: 'applying-design-system', delay: 12500 },
+      { role: 'ai', text: 'Design system applied', delay: 14000 },
+    ];
+
+    const timers = [];
+    
+    thinkingFlow.forEach((msg, index) => {
+      const timer = setTimeout(() => {
+        setMessages((prev) => [...prev, { ...msg, id: index }]);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }, msg.delay);
+      timers.push(timer);
+    });
+
+    // Cleanup timers on unmount
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
+  }, [userMessage]);
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
+        <View style={styles.headerLeft}>
+          <LinearGradient
+            colors={colors.thinkingGradient}
+            style={styles.aiAvatar}
+          >
+            <MaterialIcons name="auto-awesome" size={20} color="#ffffff" />
+          </LinearGradient>
+          <View>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>AI Assistant</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.text, opacity: 0.6 }]}>
+              Generating your app...
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Messages */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.messagesContainer}
+        contentContainerStyle={styles.messagesContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {messages.map((message) => (
+          <MessageBubble key={message.id} message={message} colors={colors} />
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -186,96 +243,89 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
-  aiAvatarContainer: {
-    marginRight: 12,
-  },
-  aiAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  headerLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiAvatarText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  headerTextContainer: {
     flex: 1,
   },
+  aiAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 13,
   },
-  conversationContainer: {
+  messagesContainer: {
     flex: 1,
   },
-  conversationContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+  messagesContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  messageContainer: {
-    flexDirection: 'row',
+  messageBubbleContainer: {
+    width: '100%',
     marginBottom: 16,
-    alignItems: 'flex-end',
-  },
-  aiMessageContainer: {
-    justifyContent: 'flex-start',
-  },
-  userMessageContainer: {
-    justifyContent: 'flex-end',
-  },
-  smallAvatarContainer: {
-    marginRight: 8,
-    marginBottom: 2,
-  },
-  smallAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  smallAvatarText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  userAvatarContainer: {
-    marginLeft: 8,
-    marginBottom: 2,
-  },
-  userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(100, 116, 139, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userAvatarText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '600',
   },
   messageBubble: {
-    maxWidth: '75%',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 18,
+    maxWidth: '75%',
   },
   messageText: {
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 22,
   },
+  thinkingContainer: {
+    width: '100%',
+    marginBottom: 16,
+    alignItems: 'flex-start',
+  },
+  thinkingBubble: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    maxWidth: '70%',
+    borderTopLeftRadius: 4,
+  },
+  thinkingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  thinkingIcon: {
+    marginRight: 8,
+  },
+  thinkingText: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.5,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+  },
 });
-
