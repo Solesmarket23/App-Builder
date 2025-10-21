@@ -141,14 +141,17 @@ const MessageBubble = React.memo(({ message, colors }) => {
 });
 
 /**
- * LoadingScreen - Shows AI thinking process as chat messages
+ * LoadingScreen - Shows AI thinking process as chat messages with REAL progress updates
  * @param {Object} props
  * @param {boolean} props.isDarkMode - Current theme mode
  * @param {string} props.userMessage - The user's app idea
+ * @param {string} props.progressMessage - Real-time progress message from AI
+ * @param {boolean} props.isThinking - Whether AI is currently thinking
  */
-export default function LoadingScreen({ isDarkMode, userMessage }) {
+export default function LoadingScreen({ isDarkMode, userMessage, progressMessage, isThinking }) {
   const [messages, setMessages] = React.useState([]);
   const scrollViewRef = React.useRef(null);
+  const previousProgressRef = React.useRef('');
 
   const colors = React.useMemo(() => ({
     background: isDarkMode ? '#000000' : '#ffffff',
@@ -162,38 +165,40 @@ export default function LoadingScreen({ isDarkMode, userMessage }) {
   }), [isDarkMode]);
 
   React.useEffect(() => {
-    // Futuristic AI thinking messages - spread over 15 seconds
-    const thinkingFlow = [
-      { role: 'user', text: userMessage, delay: 0 },
-      { role: 'thinking', text: 'analyzing-request', delay: 800 },
-      { role: 'ai', text: 'Request received. Initializing app generation...', delay: 2000 },
-      { role: 'thinking', text: 'building-component-structure', delay: 3500 },
-      { role: 'ai', text: 'Component architecture mapped', delay: 5000 },
-      { role: 'thinking', text: 'designing-ui-layout', delay: 6500 },
-      { role: 'ai', text: 'UI layout optimized for iOS', delay: 8000 },
-      { role: 'thinking', text: 'implementing-state-management', delay: 9500 },
-      { role: 'ai', text: 'State hooks configured', delay: 11000 },
-      { role: 'thinking', text: 'applying-design-system', delay: 12500 },
-      { role: 'ai', text: 'Design system applied', delay: 14000 },
-    ];
-
-    const timers = [];
-    
-    thinkingFlow.forEach((msg, index) => {
-      const timer = setTimeout(() => {
-        setMessages((prev) => [...prev, { ...msg, id: index }]);
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }, msg.delay);
-      timers.push(timer);
-    });
-
-    // Cleanup timers on unmount
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
+    // Show user message initially
+    if (messages.length === 0) {
+      setMessages([{ role: 'user', text: userMessage, id: 0 }]);
+    }
   }, [userMessage]);
+
+  React.useEffect(() => {
+    // Handle real progress updates from the AI generation process
+    if (progressMessage && progressMessage !== previousProgressRef.current) {
+      previousProgressRef.current = progressMessage;
+      
+      // Remove any existing "thinking" messages
+      setMessages((prev) => prev.filter(msg => msg.role !== 'thinking'));
+      
+      if (isThinking) {
+        // Add thinking indicator
+        setMessages((prev) => [
+          ...prev,
+          { role: 'thinking', text: 'processing', id: Date.now() }
+        ]);
+      } else {
+        // Add AI message
+        setMessages((prev) => [
+          ...prev,
+          { role: 'ai', text: progressMessage, id: Date.now() }
+        ]);
+      }
+      
+      // Auto-scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [progressMessage, isThinking]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>

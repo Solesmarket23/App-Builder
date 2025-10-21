@@ -255,9 +255,10 @@ Return the complete fixed code:`;
  * Supports multi-turn conversations for iterative refinement
  * @param {string} appIdea - User's description of the app or modification request
  * @param {Array} conversationHistory - Array of {role: 'user'|'assistant', content: string} messages
+ * @param {Function} onProgress - Callback for progress updates: (message, isThinking) => void
  * @returns {Promise<{code: string, componentName: string, usage: object, cost: object}>} - Generated component code, name, token usage, and cost
  */
-export async function generateAppCode(appIdea, conversationHistory = []) {
+export async function generateAppCode(appIdea, conversationHistory = [], onProgress = null) {
   try {
     const isFollowUp = conversationHistory.length > 1;
     
@@ -428,11 +429,17 @@ The user should be able to copy this code directly into Expo Snack and have it w
 
     let message;
 
+    // Progress: Analyzing request
+    if (onProgress) onProgress('Analyzing your idea...', true);
+
     // Use mock mode if enabled (for testing without API credits)
     if (USE_MOCK_MODE) {
       console.log(`🧪 MOCK MODE: ${isFollowUp ? 'Modifying' : 'Generating'} app (test data)`);
       message = await getMockResponse(appIdea);
     } else {
+      // Progress: Calling AI
+      if (onProgress) onProgress('Connecting to AI...', true);
+      
       // Split prompt into system instructions (cacheable) and user request (not cacheable)
       const systemInstructions = prompt.split('based on this idea:')[0] + 'based on user\'s app idea below.';
       const userRequest = `App idea: "${appIdea}"`;
@@ -455,6 +462,9 @@ The user should be able to copy this code directly into Expo Snack and have it w
           },
         ],
       });
+      
+      // Progress: Code received
+      if (onProgress) onProgress('Got it! Building your app...', false);
     }
 
     // Extract the code from the response
@@ -463,12 +473,17 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Remove markdown code blocks if present
     generatedCode = generatedCode.replace(/```jsx?\n?/g, '').replace(/```\n?$/g, '');
 
+    // Progress: Validating
+    if (onProgress) onProgress('Checking for issues...', true);
+
     // Validate the generated code
     const errors = validateCode(generatedCode);
     const criticalErrors = errors.filter(e => e.type === 'CRITICAL');
 
     // If critical errors found, attempt to fix them
     if (criticalErrors.length > 0) {
+      if (onProgress) onProgress('Fixing issues...', true);
+      
       console.log('Critical errors found, attempting to fix:', criticalErrors);
       generatedCode = await fixErrors(generatedCode, criticalErrors);
       
@@ -488,9 +503,14 @@ The user should be able to copy this code directly into Expo Snack and have it w
     }
 
     // FINAL PASS: Ensure perfect syntax
+    if (onProgress) onProgress('Adding the finishing touches...', true);
+    
     console.log('🔍 Running final syntax validation pass...');
     generatedCode = await ensurePerfectSyntax(generatedCode);
     console.log('✅ Syntax validation complete');
+    
+    // Progress: Complete
+    if (onProgress) onProgress('Your app is ready!', false);
 
     // Calculate costs (Claude Sonnet 4.5 pricing with prompt caching)
     // Standard: $3 input / $15 output per million tokens

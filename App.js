@@ -48,6 +48,8 @@ export default function App() {
   const [showChatView, setShowChatView] = useState(false);
   const [snackUrl, setSnackUrl] = useState(null);
   const [isCreatingSnack, setIsCreatingSnack] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
 
   // Example ideas to help users get started
   const exampleIdeas = [
@@ -127,8 +129,15 @@ export default function App() {
         setConversationHistory([{ role: 'user', content: userMessage }]);
       }
 
-      // Generate React Native code using Anthropic AI
-      const { code, usage, cost } = await generateAppCode(userMessage, messages);
+      // Generate React Native code using Anthropic AI with progress updates
+      const { code, usage, cost } = await generateAppCode(
+        userMessage, 
+        messages,
+        (message, thinking) => {
+          setProgressMessage(message);
+          setIsThinking(thinking);
+        }
+      );
       setGeneratedCode(code);
       setUsageStats({ usage, cost });
 
@@ -140,6 +149,8 @@ export default function App() {
       }
 
       // Create Snack for live preview in WebView
+      setProgressMessage('Preparing your live preview...');
+      setIsThinking(true);
       setIsCreatingSnack(true);
       try {
         const appName = `AI Generated: ${userMessage.substring(0, 30)}${userMessage.length > 30 ? '...' : ''}`;
@@ -292,7 +303,14 @@ export default function App() {
 
   // Show loading screen during initial generation
   if (isGenerating) {
-    return <LoadingScreen isDarkMode={isDarkMode} userMessage={idea} />;
+    return (
+      <LoadingScreen 
+        isDarkMode={isDarkMode} 
+        userMessage={idea}
+        progressMessage={progressMessage}
+        isThinking={isThinking}
+      />
+    );
   }
 
   // Show chat view when user returns from preview or has conversation history
