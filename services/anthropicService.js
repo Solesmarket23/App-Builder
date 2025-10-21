@@ -159,6 +159,25 @@ function validateCode(code) {
     errors.push({ type: 'CRITICAL', message: 'Using require() for images (use URI instead)' });
   }
 
+  // Check for forbidden Expo packages
+  const forbiddenPackages = [
+    'expo-notifications',
+    'expo-av', 
+    'expo-camera',
+    'expo-location',
+    'expo-file-system',
+    'expo-media-library',
+    'expo-contacts',
+    'expo-calendar',
+    'react-native-maps'
+  ];
+
+  forbiddenPackages.forEach(pkg => {
+    if (code.includes(`from '${pkg}'`) || code.includes(`from "${pkg}"`)) {
+      errors.push({ type: 'CRITICAL', message: `Using unavailable package: ${pkg} (not available in Snack)` });
+    }
+  });
+
   // Warning errors (nice to fix)
   if (!code.includes('StatusBar')) {
     errors.push({ type: 'WARNING', message: 'Missing StatusBar component' });
@@ -303,13 +322,14 @@ CRITICAL REQUIREMENTS:
 
 3. Start with: import React from 'react';
 
-3. Use ONLY these imports:
+3. Use ONLY these imports (NOTHING ELSE):
    - react
-   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, StatusBar, etc.)
+   - react-native (View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, Image, ActivityIndicator, StatusBar, Dimensions)
    - react-native-safe-area-context (SafeAreaView - REQUIRED for safe areas)
-   - @expo/vector-icons (for icons)
-   - expo-linear-gradient (for gradients)
-   - NO OTHER LIBRARIES
+   - @expo/vector-icons (Ionicons, MaterialIcons, Feather, etc. for icons)
+   - expo-linear-gradient (LinearGradient for gradients)
+   
+   **ABSOLUTELY NO OTHER PACKAGES - These are the ONLY 5 imports allowed**
 
 4. Create a complete, working app with:
    - Proper state management using useState and useEffect
@@ -359,6 +379,11 @@ NEVER USE (WILL CAUSE ERRORS):
 - react-native-vector-icons (use @expo/vector-icons instead)
 - fetch() calls to external APIs
 - expo-camera, expo-location, expo-file-system (not in web preview)
+- expo-notifications (not available in Snack)
+- expo-av (not available in Snack)
+- expo-media-library, expo-contacts, expo-calendar (not available in Snack)
+- react-native-maps (not available in Snack)
+- Any push notifications, camera, or device-specific features
 - require() for local images (use URLs instead)
 - Any library not explicitly listed in allowed imports
 
