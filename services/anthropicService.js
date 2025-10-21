@@ -564,9 +564,9 @@ The user should be able to copy this code directly into Expo Snack and have it w
     generatedCode = generatedCode.trim();
     
     // Remove duplicate const declarations (common Claude error)
-    const lines = generatedCode.split('\n');
+    const codeLines = generatedCode.split('\n');
     const seenConsts = new Set();
-    const dedupedLines = lines.filter(line => {
+    const dedupedLines = codeLines.filter(line => {
       const constMatch = line.match(/^\s*const\s+([A-Z_][A-Z0-9_]*)\s*=/);
       if (constMatch) {
         const varName = constMatch[1];
