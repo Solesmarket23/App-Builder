@@ -138,32 +138,6 @@ async function getMockResponse(appIdea) {
 function validateCode(code) {
   const errors = [];
 
-  // Check for basic syntax issues
-  const lines = code.split('\n');
-  lines.forEach((line, index) => {
-    // Check for missing semicolons after simple statements
-    const trimmed = line.trim();
-    if (trimmed && 
-        !trimmed.endsWith(';') && 
-        !trimmed.endsWith('{') && 
-        !trimmed.endsWith('}') &&
-        !trimmed.endsWith(',') &&
-        !trimmed.startsWith('//') &&
-        !trimmed.startsWith('/*') &&
-        !trimmed.startsWith('*') &&
-        !trimmed.startsWith('import ') &&
-        !trimmed.startsWith('export ') &&
-        !trimmed.match(/^(if|else|for|while|function|const|let|var|return)/)) {
-      // Likely JSX or continuation, skip
-      if (!trimmed.startsWith('<') && !trimmed.startsWith('>') && !trimmed.match(/^\)/)) {
-        // Check if it looks like a statement that needs semicolon
-        if (trimmed.includes('=') || trimmed.match(/\)\s*$/)) {
-          errors.push({ type: 'CRITICAL', message: `Line ${index + 1}: Possible missing semicolon` });
-        }
-      }
-    }
-  });
-
   // Critical errors (must fix)
   if (!code.includes('SafeAreaView')) {
     errors.push({ type: 'CRITICAL', message: 'Missing SafeAreaView wrapper' });
@@ -282,9 +256,13 @@ Return ONLY the complete React Native component code.`;
 
 CRITICAL REQUIREMENTS:
 
+**SYNTAX IS CRITICAL - ALL CODE MUST BE SYNTACTICALLY PERFECT WITH NO ERRORS**
+
 1. Output ONLY valid React Native code with Expo - no explanations, no markdown, no backticks
 
-2. Start with: import React from 'react';
+2. **EVERY statement must end with proper punctuation (semicolons, commas, brackets)**
+
+3. Start with: import React from 'react';
 
 3. Use ONLY these imports:
    - react
