@@ -174,6 +174,7 @@ export default function LoadingScreen({ isDarkMode, userMessage, progressMessage
   React.useEffect(() => {
     // Handle real progress updates from the AI generation process
     if (progressMessage && progressMessage !== previousProgressRef.current) {
+      console.log('📱 UI Progress Update:', progressMessage, 'isThinking:', isThinking);
       previousProgressRef.current = progressMessage;
       
       // Remove any existing "thinking" messages

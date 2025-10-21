@@ -107,6 +107,8 @@ export default function App() {
     setIsGenerating(true);
     setError('');
     setShowPreview(false);
+    setProgressMessage('Starting generation...');
+    setIsThinking(true);
     
     // Set modification state and request
     if (isModification) {
