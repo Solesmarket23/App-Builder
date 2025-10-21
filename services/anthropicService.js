@@ -138,16 +138,16 @@ async function getMockResponse(appIdea) {
 function validateCode(code) {
   const errors = [];
 
-  // Check for duplicate variable declarations
-  const constDeclarations = code.match(/const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=/g);
-  if (constDeclarations) {
-    const declaredVars = {};
-    constDeclarations.forEach(declaration => {
-      const varName = declaration.match(/const\s+([A-Za-z_][A-Za-z0-9_]*)/)[1];
-      if (declaredVars[varName]) {
+  // Check for duplicate declarations (const, let, var, function, class)
+  const declarations = code.match(/(?:const|let|var|function|class)\s+([A-Za-z_][A-Za-z0-9_]*)/g);
+  if (declarations) {
+    const declaredNames = {};
+    declarations.forEach(declaration => {
+      const varName = declaration.match(/(?:const|let|var|function|class)\s+([A-Za-z_][A-Za-z0-9_]*)/)[1];
+      if (declaredNames[varName]) {
         errors.push({ type: 'CRITICAL', message: `Duplicate declaration: ${varName} is declared multiple times` });
       }
-      declaredVars[varName] = true;
+      declaredNames[varName] = true;
     });
   }
 
@@ -563,19 +563,19 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Trim whitespace
     generatedCode = generatedCode.trim();
     
-    // Remove duplicate const declarations (common Claude error)
+    // Remove duplicate declarations (common Claude error)
     const codeLines = generatedCode.split('\n');
-    const seenConsts = new Set();
+    const seenDeclarations = new Set();
     const dedupedLines = codeLines.filter(line => {
-      // Match any const declaration: const ANYTHING = ...
-      const constMatch = line.match(/^\s*const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=/);
-      if (constMatch) {
-        const varName = constMatch[1];
-        if (seenConsts.has(varName)) {
+      // Match any declaration: const/let/var/function/class NAME = ...
+      const declMatch = line.match(/^\s*(?:const|let|var|function|class)\s+([A-Za-z_][A-Za-z0-9_]*)/);
+      if (declMatch) {
+        const varName = declMatch[1];
+        if (seenDeclarations.has(varName)) {
           console.log(`🔧 Removed duplicate declaration: ${varName}`);
           return false; // Remove this line
         }
-        seenConsts.add(varName);
+        seenDeclarations.add(varName);
       }
       return true;
     });
