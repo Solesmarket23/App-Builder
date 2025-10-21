@@ -139,11 +139,11 @@ function validateCode(code) {
   const errors = [];
 
   // Check for duplicate variable declarations
-  const constDeclarations = code.match(/const\s+([A-Z_][A-Z0-9_]*)\s*=/g);
+  const constDeclarations = code.match(/const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=/g);
   if (constDeclarations) {
     const declaredVars = {};
     constDeclarations.forEach(declaration => {
-      const varName = declaration.match(/const\s+([A-Z_][A-Z0-9_]*)/)[1];
+      const varName = declaration.match(/const\s+([A-Za-z_][A-Za-z0-9_]*)/)[1];
       if (declaredVars[varName]) {
         errors.push({ type: 'CRITICAL', message: `Duplicate declaration: ${varName} is declared multiple times` });
       }
@@ -567,7 +567,8 @@ The user should be able to copy this code directly into Expo Snack and have it w
     const codeLines = generatedCode.split('\n');
     const seenConsts = new Set();
     const dedupedLines = codeLines.filter(line => {
-      const constMatch = line.match(/^\s*const\s+([A-Z_][A-Z0-9_]*)\s*=/);
+      // Match any const declaration: const ANYTHING = ...
+      const constMatch = line.match(/^\s*const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=/);
       if (constMatch) {
         const varName = constMatch[1];
         if (seenConsts.has(varName)) {
