@@ -18,6 +18,14 @@ const { width } = Dimensions.get('window');
 export default function LoadingScreen({ isDarkMode }) {
   const spinValue = React.useRef(new Animated.Value(0)).current;
   const pulseValue = React.useRef(new Animated.Value(1)).current;
+  const [currentStep, setCurrentStep] = React.useState(0);
+
+  const steps = [
+    { text: 'Analyzing your idea', duration: 15000 }, // 0-15s
+    { text: 'Designing components', duration: 20000 }, // 15-35s
+    { text: 'Writing code', duration: 25000 }, // 35-60s
+    { text: 'Finalizing UI', duration: 30000 }, // 60-90s
+  ];
 
   React.useEffect(() => {
     // Spin animation
@@ -44,6 +52,22 @@ export default function LoadingScreen({ isDarkMode }) {
         }),
       ])
     ).start();
+
+    // Progress through steps based on time
+    const stepTimers = [];
+    let cumulativeTime = 0;
+
+    steps.forEach((step, index) => {
+      cumulativeTime += step.duration;
+      const timer = setTimeout(() => {
+        setCurrentStep(index + 1);
+      }, cumulativeTime);
+      stepTimers.push(timer);
+    });
+
+    return () => {
+      stepTimers.forEach(timer => clearTimeout(timer));
+    };
   }, []);
 
   const spin = spinValue.interpolate({
@@ -91,26 +115,14 @@ export default function LoadingScreen({ isDarkMode }) {
 
         {/* Progress Steps */}
         <View style={styles.stepsContainer}>
-          <LoadingStep
-            text="Analyzing your idea"
-            isDarkMode={isDarkMode}
-            delay={0}
-          />
-          <LoadingStep
-            text="Designing components"
-            isDarkMode={isDarkMode}
-            delay={1000}
-          />
-          <LoadingStep
-            text="Writing code"
-            isDarkMode={isDarkMode}
-            delay={2000}
-          />
-          <LoadingStep
-            text="Finalizing UI"
-            isDarkMode={isDarkMode}
-            delay={3000}
-          />
+          {steps.map((step, index) => (
+            <LoadingStep
+              key={index}
+              text={step.text}
+              isDarkMode={isDarkMode}
+              isActive={currentStep >= index}
+            />
+          ))}
         </View>
 
         {/* Time Estimate */}
@@ -122,34 +134,60 @@ export default function LoadingScreen({ isDarkMode }) {
   );
 }
 
-function LoadingStep({ text, isDarkMode, delay }) {
-  const [isVisible, setIsVisible] = React.useState(false);
+function LoadingStep({ text, isDarkMode, delay, isActive }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
 
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [delay]);
+    if (isActive) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isActive]);
 
   const colors = {
     text: isDarkMode ? '#cbd5e1' : '#4b5563',
     checkmark: isDarkMode ? '#06b6d4' : '#2563eb',
+    inactive: isDarkMode ? '#475569' : '#9ca3af',
   };
 
-  if (!isVisible) return null;
-
   return (
-    <Animated.View style={[styles.step, { opacity: fadeAnim }]}>
-      <Text style={[styles.checkmark, { color: colors.checkmark }]}>✓</Text>
-      <Text style={[styles.stepText, { color: colors.text }]}>{text}</Text>
+    <Animated.View
+      style={[
+        styles.step,
+        {
+          opacity: isActive ? fadeAnim : 0.3,
+          transform: [{ scale: isActive ? scaleAnim : 0.95 }],
+        },
+      ]}
+    >
+      <Text
+        style={[
+          styles.checkmark,
+          { color: isActive ? colors.checkmark : colors.inactive },
+        ]}
+      >
+        {isActive ? '✓' : '○'}
+      </Text>
+      <Text
+        style={[
+          styles.stepText,
+          { color: isActive ? colors.text : colors.inactive },
+        ]}
+      >
+        {text}
+      </Text>
     </Animated.View>
   );
 }
