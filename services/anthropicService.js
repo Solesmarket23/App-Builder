@@ -172,6 +172,44 @@ function validateCode(code) {
 }
 
 /**
+ * Ensures code has perfect syntax by doing a final cleanup pass
+ * @param {string} code - Generated code
+ * @returns {Promise<string>} - Syntax-perfect code
+ */
+async function ensurePerfectSyntax(code) {
+  const syntaxPrompt = `Review this React Native code and fix ANY syntax errors (missing semicolons, commas, brackets, etc.). 
+Return ONLY the corrected code with PERFECT syntax - no explanations, no markdown, no backticks.
+
+CRITICAL: Every statement MUST end with a semicolon. Every array/object MUST have proper commas. All brackets must be balanced.
+
+CODE TO FIX:
+${code}
+
+Return the complete code with perfect syntax:`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: syntaxPrompt,
+        },
+      ],
+    });
+
+    let fixedCode = message.content[0].text;
+    fixedCode = fixedCode.replace(/```jsx?\n?/g, '').replace(/```\n?$/g, '');
+    
+    return fixedCode;
+  } catch (error) {
+    console.error('Error ensuring syntax:', error);
+    return code; // Return original if fix fails
+  }
+}
+
+/**
  * Attempts to auto-fix critical errors in generated code
  * @param {string} code - Generated code with errors
  * @param {Array} errors - List of errors to fix
@@ -443,6 +481,11 @@ The user should be able to copy this code directly into Expo Snack and have it w
     if (warnings.length > 0) {
       console.log('Code warnings:', warnings);
     }
+
+    // FINAL PASS: Ensure perfect syntax
+    console.log('🔍 Running final syntax validation pass...');
+    generatedCode = await ensurePerfectSyntax(generatedCode);
+    console.log('✅ Syntax validation complete');
 
     // Calculate costs (Claude Sonnet 4.5 pricing with prompt caching)
     // Standard: $3 input / $15 output per million tokens
