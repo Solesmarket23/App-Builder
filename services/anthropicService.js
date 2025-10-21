@@ -586,24 +586,13 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Progress: Validating
     if (onProgress) onProgress('Checking for issues...', true);
 
-    // Validate the generated code
+    // Validate the generated code (but don't auto-fix - let user see results fast)
     const errors = validateCode(generatedCode);
     const criticalErrors = errors.filter(e => e.type === 'CRITICAL');
 
-    // If critical errors found, attempt to fix them
+    // Log errors but don't block - user can fix in conversation
     if (criticalErrors.length > 0) {
-      if (onProgress) onProgress('Fixing issues...', true);
-      
-      console.log('Critical errors found, attempting to fix:', criticalErrors);
-      generatedCode = await fixErrors(generatedCode, criticalErrors);
-      
-      // Validate again after fix
-      const remainingErrors = validateCode(generatedCode);
-      const remainingCritical = remainingErrors.filter(e => e.type === 'CRITICAL');
-      
-      if (remainingCritical.length > 0) {
-        console.warn('Some critical errors remain after fix:', remainingCritical);
-      }
+      console.log('⚠️ Issues detected (will work on fixes in conversation):', criticalErrors);
     }
 
     // Log warnings (non-blocking)
@@ -612,16 +601,8 @@ The user should be able to copy this code directly into Expo Snack and have it w
       console.log('Code warnings:', warnings);
     }
 
-    // OPTIONAL: Final syntax check (skip to save time/cost if no errors)
-    // Only run if we want extra validation
-    const runFinalSyntaxCheck = false; // Set to true for extra safety
-    
-    if (runFinalSyntaxCheck) {
-      if (onProgress) onProgress('Adding the finishing touches...', true);
-      console.log('🔍 Running final syntax validation pass...');
-      generatedCode = await ensurePerfectSyntax(generatedCode);
-      console.log('✅ Syntax validation complete');
-    }
+    // Skip auto-fix and final syntax check - prioritize speed
+    // User can request fixes through conversation if needed
     
     // Progress: Complete
     if (onProgress) onProgress('Your app is ready!', false);
