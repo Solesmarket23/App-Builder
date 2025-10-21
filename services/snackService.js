@@ -52,7 +52,7 @@ export async function createSnack(code, name = 'AI Generated App') {
     
     return {
       url: `https://snack.expo.dev/${snackId}`,
-      embedUrl: `https://snack.expo.dev/embedded/@snack/${snackId}?preview=true&platform=ios&theme=dark&iframeId=preview-only`,
+      embedUrl: `https://snack.expo.dev/embedded/${snackId}?preview=true&platform=ios&theme=dark`,
       id: snackId,
     };
   } catch (error) {
