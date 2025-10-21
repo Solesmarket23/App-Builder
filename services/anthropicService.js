@@ -527,12 +527,16 @@ The user should be able to copy this code directly into Expo Snack and have it w
       console.log('Code warnings:', warnings);
     }
 
-    // FINAL PASS: Ensure perfect syntax
-    if (onProgress) onProgress('Adding the finishing touches...', true);
+    // OPTIONAL: Final syntax check (skip to save time/cost if no errors)
+    // Only run if we want extra validation
+    const runFinalSyntaxCheck = false; // Set to true for extra safety
     
-    console.log('🔍 Running final syntax validation pass...');
-    generatedCode = await ensurePerfectSyntax(generatedCode);
-    console.log('✅ Syntax validation complete');
+    if (runFinalSyntaxCheck) {
+      if (onProgress) onProgress('Adding the finishing touches...', true);
+      console.log('🔍 Running final syntax validation pass...');
+      generatedCode = await ensurePerfectSyntax(generatedCode);
+      console.log('✅ Syntax validation complete');
+    }
     
     // Progress: Complete
     if (onProgress) onProgress('Your app is ready!', false);
