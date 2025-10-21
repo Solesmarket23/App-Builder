@@ -510,6 +510,7 @@ The user should be able to copy this code directly into Expo Snack and have it w
     // Remove markdown code blocks (```jsx, ```javascript, ```)
     generatedCode = generatedCode.replace(/```(?:jsx?|javascript|typescript|ts)?\n?/gi, '');
     generatedCode = generatedCode.replace(/```\n?$/g, '');
+    generatedCode = generatedCode.replace(/```/g, ''); // Remove any remaining backticks
     
     // Remove markdown headers and documentation (###, ##, #, etc.)
     generatedCode = generatedCode.split('\n')
@@ -522,7 +523,8 @@ The user should be able to copy this code directly into Expo Snack and have it w
           trimmed.startsWith('# ') ||
           trimmed.match(/^[A-Z][a-z]+\s+[A-Z]/) || // Likely a title like "Color Picker App"
           trimmed.startsWith('**') || // Bold markdown
-          trimmed.startsWith('---') // Horizontal rule
+          trimmed.startsWith('---') || // Horizontal rule
+          trimmed.startsWith('`') && trimmed.endsWith('`') && trimmed.includes('.') // File paths like `file.js`
         );
       })
       .join('\n');
@@ -547,6 +549,18 @@ The user should be able to copy this code directly into Expo Snack and have it w
     
     // Trim whitespace
     generatedCode = generatedCode.trim();
+    
+    // Final check: remove any stray backticks that aren't part of template literals
+    // Template literals should be in the format: `text ${variable} text`
+    // Lone backticks are likely markdown artifacts
+    generatedCode = generatedCode.split('\n').map(line => {
+      // If line has a single backtick (not paired), remove it
+      const backtickCount = (line.match(/`/g) || []).length;
+      if (backtickCount === 1 && !line.includes('${')) {
+        return line.replace(/`/g, '');
+      }
+      return line;
+    }).join('\n');
     
     // Validate the code starts correctly
     if (!generatedCode.startsWith('import ') && !generatedCode.startsWith('// ') && !generatedCode.startsWith('/*')) {
